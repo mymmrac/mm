@@ -89,10 +89,10 @@ func (l *lexer) tokenize(text string) ([]token, *exprError) {
 		tValue  string
 	)
 
-	for text != "" {
-		text, trimmed = trimWhitespacesAndCount(text)
-		offset += trimmed
+	text, trimmed = trimWhitespacesAndCount(text)
+	offset += trimmed
 
+	for text != "" {
 		loc = identPattern.FindStringIndex(text)
 		tKind = identifier
 
@@ -135,6 +135,9 @@ func (l *lexer) tokenize(text string) ([]token, *exprError) {
 
 		offset += len(tValue)
 		text = text[loc[1]:]
+
+		text, trimmed = trimWhitespacesAndCount(text)
+		offset += trimmed
 	}
 
 	return tokens, nil
