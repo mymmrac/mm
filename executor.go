@@ -108,6 +108,11 @@ func (l *lexer) tokenize(text string) ([]token, *exprError) {
 
 		if len(loc) == 0 {
 			loc = unknownPattern.FindStringIndex(text)
+
+			if len(loc) == 0 {
+				return nil, newExprErr("invalid expression", location{start: 0, end: len(text) + offset})
+			}
+
 			return nil, newExprErr(
 				fmt.Sprintf("unknown token: `%s`", text[loc[0]:loc[1]]),
 				location{
