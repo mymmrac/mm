@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 const (
@@ -22,6 +23,8 @@ type model struct {
 	selectedExpr int
 	exprError    *exprError
 	executor     *executor
+
+	width, height int
 }
 
 func newModel() *model {
@@ -117,6 +120,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input.SetValue(m.expressions[m.selectedExpr])
 			m.input.CursorEnd()
 		}
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	}
 
 	if m.selectedExpr == historyDisabled {
@@ -140,15 +146,16 @@ func (m *model) View() string {
 	s.WriteString("\n")
 
 	for i, expr := range m.expressions {
-		s.WriteString("> " + expr + "\n")
-		s.WriteString("=> " + m.results[i] + "\n\n")
+		s.WriteString(wordwrap.String("> "+expr+"\n", m.width))
+		s.WriteString(wordwrap.String("=> "+m.results[i]+"\n\n", m.width))
 	}
 
+	m.input.Width = m.width - len(m.input.Prompt) - 1
 	s.WriteString(m.input.View())
 
 	if m.exprError != nil {
 		s.WriteString(fmt.Sprintf("\n%s^\n", strings.Repeat(" ", m.exprError.pos+len(m.input.Prompt))))
-		s.WriteString("Syntax error: " + m.exprError.text)
+		s.WriteString(wordwrap.String("Syntax error: "+m.exprError.text, m.width))
 	}
 
 	return s.String()
