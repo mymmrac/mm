@@ -6,15 +6,24 @@ import (
 	"strings"
 )
 
-type exprError struct {
-	text string
-	pos  int
+type location struct {
+	start int
+	end   int
 }
 
-func newExprErr(text string, pos int) *exprError {
+func (l location) size() int {
+	return l.end - l.start
+}
+
+type exprError struct {
+	text string
+	loc  location
+}
+
+func newExprErr(text string, loc location) *exprError {
 	return &exprError{
 		text: text,
-		pos:  pos,
+		loc:  loc,
 	}
 }
 
@@ -29,21 +38,24 @@ func newExecutor() *executor {
 }
 
 func (e *executor) execute(expr string) (string, *exprError) {
-	tokens := e.lexer.tokenize(expr)
+	tokens, err := e.lexer.tokenize(expr)
+	if err != nil {
+		return "", err
+	}
+
 	return strings.Join(mapSlice(tokens, toString[token]), ", "), nil
 }
 
 type tokenKind string
 
 type token struct {
-	kind     tokenKind
-	value    string
-	startPos int
-	endPos   int
+	kind  tokenKind
+	value string
+	loc   location
 }
 
 func (t token) String() string {
-	return fmt.Sprintf("{%s}:%d-%d `%s`", t.kind, t.startPos, t.endPos, t.value)
+	return fmt.Sprintf("{%s}:%d-%d `%s`", t.kind, t.loc.start, t.loc.end, t.value)
 }
 
 type lexer struct{}
@@ -62,13 +74,15 @@ var (
 	identPattern    = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*`)
 	numberPattern   = regexp.MustCompile(`^-?[0-9_]+(:?\.[0-9_]+)?`)
 	operatorPattern = regexp.MustCompile(`^[-+*/^()]`)
+
+	unknownPattern = regexp.MustCompile(`^[^ \t]+`)
 )
 
-func (l *lexer) tokenize(text string) []token {
+func (l *lexer) tokenize(text string) ([]token, *exprError) {
 	var tokens []token
 
 	var (
-		pos     = 0
+		offset  = 0
 		trimmed int
 		loc     []int
 		tKind   tokenKind
@@ -77,7 +91,7 @@ func (l *lexer) tokenize(text string) []token {
 
 	for text != "" {
 		text, trimmed = trimWhitespacesAndCount(text)
-		pos += trimmed
+		offset += trimmed
 
 		loc = identPattern.FindStringIndex(text)
 		tKind = identifier
@@ -93,21 +107,30 @@ func (l *lexer) tokenize(text string) []token {
 		}
 
 		if len(loc) == 0 {
-			panic("TODO: Handle invalid syntax")
+			loc = unknownPattern.FindStringIndex(text)
+			return nil, newExprErr(
+				fmt.Sprintf("unknown token: `%s`", text[loc[0]:loc[1]]),
+				location{
+					start: loc[0] + offset,
+					end:   loc[1] + offset,
+				},
+			)
 		}
 
 		tValue = text[loc[0]:loc[1]]
 
 		tokens = append(tokens, token{
-			kind:     tKind,
-			value:    tValue,
-			startPos: loc[0] + pos,
-			endPos:   loc[1] + pos,
+			kind:  tKind,
+			value: tValue,
+			loc: location{
+				start: loc[0] + offset,
+				end:   loc[1] + offset,
+			},
 		})
 
-		pos += len(tValue)
+		offset += len(tValue)
 		text = text[loc[1]:]
 	}
 
-	return tokens
+	return tokens, nil
 }

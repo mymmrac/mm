@@ -64,14 +64,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, keys.Execute):
 			expr := m.input.Value()
-			if expr == "" {
+			if strings.TrimSpace(expr) == "" {
 				break
 			}
 
 			result, err := m.executor.execute(expr)
 			if err != nil {
 				m.exprError = err
-				m.input.SetCursor(err.pos + 1)
+				m.input.SetCursor(err.loc.end)
 				m.selectedExpr = historyDisabled
 				break
 			}
@@ -154,8 +154,14 @@ func (m *model) View() string {
 	s.WriteString(m.input.View())
 
 	if m.exprError != nil {
-		s.WriteString(fmt.Sprintf("\n%s^\n", strings.Repeat(" ", m.exprError.pos+len(m.input.Prompt))))
-		s.WriteString(wordwrap.String("Syntax error: "+m.exprError.text, m.width))
+		err := m.exprError
+
+		s.WriteString(fmt.Sprintf(
+			"\n%s%s\n",
+			strings.Repeat(" ", err.loc.start+len(m.input.Prompt)),
+			strings.Repeat("^", err.loc.size()),
+		))
+		s.WriteString(wordwrap.String("Syntax error: "+err.text, m.width))
 	}
 
 	return s.String()
