@@ -5,8 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mymmrac/mm/utils"
 	"github.com/shopspring/decimal"
+
+	"github.com/mymmrac/mm/utils"
 )
 
 func init() {

@@ -3,6 +3,9 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	"github.com/muesli/reflow/wordwrap"
+	"github.com/muesli/reflow/wrap"
 )
 
 func MapSlice[T1, T2 any](slice []T1, f func(T1) T2) []T2 {
@@ -40,4 +43,8 @@ func Keys[K comparable, V any](m map[K]V) []K {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func Wrap(text string, limit int) string {
+	return wrap.String(wordwrap.String(text, limit), limit)
 }

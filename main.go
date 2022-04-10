@@ -8,7 +8,8 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/reflow/wordwrap"
+
+	"github.com/mymmrac/mm/utils"
 )
 
 const (
@@ -148,8 +149,8 @@ func (m *model) View() string {
 	s.WriteString("\n")
 
 	for i, expr := range m.expressions {
-		s.WriteString(wordwrap.String("> "+expr+"\n", m.width))
-		s.WriteString(wordwrap.String("=> "+m.results[i]+"\n\n", m.width))
+		s.WriteString(utils.Wrap("> "+expr+"\n", m.width))
+		s.WriteString(utils.Wrap("=> "+m.results[i]+"\n\n", m.width))
 	}
 
 	m.input.Width = m.width - len(m.input.Prompt) - 1
@@ -163,7 +164,7 @@ func (m *model) View() string {
 			strings.Repeat(" ", err.loc.start+len(m.input.Prompt)),
 			strings.Repeat("^", err.loc.Size()),
 		))
-		s.WriteString(wordwrap.String("Syntax error: "+err.text, m.width))
+		s.WriteString(utils.Wrap("Syntax error: "+err.text, m.width))
 	}
 
 	return s.String()

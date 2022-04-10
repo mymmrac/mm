@@ -3,8 +3,9 @@ package main
 import (
 	"strconv"
 
-	"github.com/mymmrac/mm/utils"
 	"github.com/shopspring/decimal"
+
+	"github.com/mymmrac/mm/utils"
 )
 
 type ExprError struct {
