@@ -3,78 +3,147 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
+	"github.com/mymmrac/mm/utils"
 )
 
-type tokenKind string
+type Operator int
 
-type token struct {
-	kind  tokenKind
-	value string
-	loc   location
+const (
+	OpNone Operator = iota
+	OpPlus
+	OpMinus
+	OpMultiply
+	OpDivide
+	OpPower
+	OpOpenParent
+	OpClosedParent
+
+	OpsLast
+)
+
+var textToOps = map[string]Operator{
+	"+": OpPlus,
+	"-": OpMinus,
+	"*": OpMultiply,
+	"/": OpDivide,
+	"^": OpPower,
+	"(": OpOpenParent,
+	")": OpClosedParent,
+}
+var opsToText map[Operator]string
+
+func init() {
+	utils.Assert(int(OpsLast)-1 == len(textToOps), "ops count does not match", OpsLast-1, len(textToOps))
+
+	opsToText = make(map[Operator]string, len(textToOps))
+	for text, op := range textToOps {
+		opsToText[op] = text
+	}
+
+	opsText := utils.Keys(textToOps)
+
+	var singleCharOps, multiCharOps []string
+	utils.ForeachSlice(opsText, func(op string) {
+		if len(op) == 1 {
+			singleCharOps = append(singleCharOps, op)
+		} else {
+			multiCharOps = append(multiCharOps, op)
+		}
+	})
+
+	escapeAll := func(op string) string {
+		escaped := ""
+		for _, r := range op {
+			escaped += fmt.Sprintf("\\%c", r)
+		}
+		return escaped
+	}
+
+	var opPattern string
+	if len(multiCharOps) > 0 {
+		opPattern = fmt.Sprintf(`^(:?[%s]|%s)`,
+			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""),
+			strings.Join(utils.MapSlice(multiCharOps, escapeAll), "|"))
+	} else {
+		opPattern = fmt.Sprintf(`^[%s]`,
+			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""))
+	}
+	operatorPattern = regexp.MustCompile(opPattern)
 }
 
-func (t token) String() string {
-	return fmt.Sprintf("{%s}:%d-%d `%s`", t.kind, t.loc.start, t.loc.end, t.value)
+type TokenKind string
+
+type Token struct {
+	kind   TokenKind
+	text   string
+	loc    Location
+	number float64
+	op     Operator
 }
 
-type lexer struct{}
+func (t Token) String() string {
+	return fmt.Sprintf("{%s}:%d-%d `%s`", t.kind, t.loc.start, t.loc.end, t.text)
+}
 
-func newLexer() *lexer {
-	return &lexer{}
+type Lexer struct{}
+
+func NewLexer() *Lexer {
+	return &Lexer{}
 }
 
 const (
-	identifier tokenKind = "identifier" // `abc`, `a12`, `a_b_1`
-	number     tokenKind = "number"     // `123`, `1.12`, `-12`, `1_2_3`
-	operator   tokenKind = "operator"   // `+`, `-`, `^`, `(`
+	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
+	KindNumber     TokenKind = "number"     // `123`, `1.12`, `-12`, `1_2_3`
+	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
 )
 
 var (
 	identPattern    = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*`)
 	numberPattern   = regexp.MustCompile(`^-?[0-9_]+(:?\.[0-9_]+)?`)
-	operatorPattern = regexp.MustCompile(`^[-+*/^()]`)
+	operatorPattern *regexp.Regexp // `^[-+*/^()]`
 
 	unknownPattern = regexp.MustCompile(`^[^ \t]+`)
 )
 
-func (l *lexer) tokenize(text string) ([]token, *exprError) {
-	var tokens []token
-
+func (l *Lexer) Tokenize(text string) ([]Token, *ExprError) {
+	var tokens []Token
 	var (
 		offset  = 0
 		trimmed int
 		loc     []int
-		tKind   tokenKind
+		tKind   TokenKind
 		tValue  string
 	)
 
-	text, trimmed = trimWhitespacesAndCount(text)
+	text, trimmed = utils.TrimWhitespacesAndCount(text)
 	offset += trimmed
 
 	for text != "" {
 		loc = identPattern.FindStringIndex(text)
-		tKind = identifier
+		tKind = KindIdentifier
 
 		if len(loc) == 0 {
 			loc = numberPattern.FindStringIndex(text)
-			tKind = number
+			tKind = KindNumber
 		}
 
 		if len(loc) == 0 {
 			loc = operatorPattern.FindStringIndex(text)
-			tKind = operator
+			tKind = KindOperator
 		}
 
 		if len(loc) == 0 {
 			loc = unknownPattern.FindStringIndex(text)
 
 			if len(loc) == 0 {
-				return nil, newExprErr("invalid expression", location{start: 0, end: len(text) + offset})
+				return nil, NewExprErr("invalid expression", Location{start: 0, end: len(text) + offset})
 			}
 
-			return nil, newExprErr(
+			return nil, NewExprErr(
 				fmt.Sprintf("unknown token: `%s`", text[loc[0]:loc[1]]),
-				location{
+				Location{
 					start: loc[0] + offset,
 					end:   loc[1] + offset,
 				},
@@ -83,10 +152,10 @@ func (l *lexer) tokenize(text string) ([]token, *exprError) {
 
 		tValue = text[loc[0]:loc[1]]
 
-		tokens = append(tokens, token{
-			kind:  tKind,
-			value: tValue,
-			loc: location{
+		tokens = append(tokens, Token{
+			kind: tKind,
+			text: tValue,
+			loc: Location{
 				start: loc[0] + offset,
 				end:   loc[1] + offset,
 			},
@@ -95,7 +164,7 @@ func (l *lexer) tokenize(text string) ([]token, *exprError) {
 		offset += len(tValue)
 		text = text[loc[1]:]
 
-		text, trimmed = trimWhitespacesAndCount(text)
+		text, trimmed = utils.TrimWhitespacesAndCount(text)
 		offset += trimmed
 	}
 

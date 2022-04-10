@@ -17,12 +17,14 @@ const (
 )
 
 type model struct {
-	input        textinput.Model
+	input textinput.Model
+
+	selectedExpr int
 	expressions  []string
 	results      []string
-	selectedExpr int
-	exprError    *exprError
-	executor     *executor
+
+	executor  *Executor
+	exprError *ExprError
 
 	width, height int
 }
@@ -37,7 +39,7 @@ func newModel() *model {
 		input:        input,
 		expressions:  make([]string, 0),
 		selectedExpr: historyNone,
-		executor:     newExecutor(),
+		executor:     NewExecutor(),
 	}
 }
 
@@ -68,7 +70,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-			result, err := m.executor.execute(expr)
+			result, err := m.executor.Execute(expr)
 			if err != nil {
 				m.exprError = err
 				m.input.SetCursor(err.loc.end)
@@ -159,7 +161,7 @@ func (m *model) View() string {
 		s.WriteString(fmt.Sprintf(
 			"\n%s%s\n",
 			strings.Repeat(" ", err.loc.start+len(m.input.Prompt)),
-			strings.Repeat("^", err.loc.size()),
+			strings.Repeat("^", err.loc.Size()),
 		))
 		s.WriteString(wordwrap.String("Syntax error: "+err.text, m.width))
 	}
