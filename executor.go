@@ -6,15 +6,6 @@ import (
 	"github.com/mymmrac/mm/utils"
 )
 
-type Location struct {
-	start int
-	end   int
-}
-
-func (l Location) Size() int {
-	return l.end - l.start
-}
-
 type ExprError struct {
 	text string
 	loc  Location
@@ -75,32 +66,6 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	return nil
 }
 
-func (e *Executor) precedence(op Operator) int {
-	switch op {
-	case OpPlus, OpMinus:
-		return 1
-	case OpMultiply, OpDivide:
-		return 2
-	default:
-		return 0
-	}
-}
-
-func (e *Executor) applyBinaryOp(a, b float64, op Operator) (float64, bool) {
-	switch op {
-	case OpPlus:
-		return a + b, true
-	case OpMinus:
-		return a - b, true
-	case OpMultiply:
-		return a * b, true
-	case OpDivide:
-		return a / b, true
-	default:
-		return 0, false
-	}
-}
-
 func (e *Executor) evaluate(tokens []Token) float64 {
 	// stack to store integer values.
 	var values utils.Stack[float64]
@@ -120,7 +85,7 @@ func (e *Executor) evaluate(tokens []Token) float64 {
 
 				op := ops.Pop()
 
-				res, ok := e.applyBinaryOp(val1, val2, op)
+				res, ok := applyBinaryOp(val1, val2, op)
 				if !ok {
 					panic(ok)
 				}
@@ -133,13 +98,13 @@ func (e *Executor) evaluate(tokens []Token) float64 {
 		} else {
 			// While top of 'ops' has same or greater precedence to current token, which is an operator. Apply operator on top
 			//of 'ops' to top two elements in values stack.
-			for !ops.Empty() && e.precedence(ops.Top()) >= e.precedence(tokens[i].op) {
+			for !ops.Empty() && opPrecedence(ops.Top()) >= opPrecedence(tokens[i].op) {
 				val2 := values.Pop()
 				val1 := values.Pop()
 
 				op := ops.Pop()
 
-				res, ok := e.applyBinaryOp(val1, val2, op)
+				res, ok := applyBinaryOp(val1, val2, op)
 				if !ok {
 					panic(ok)
 				}
@@ -157,7 +122,7 @@ func (e *Executor) evaluate(tokens []Token) float64 {
 
 		op := ops.Pop()
 
-		res, ok := e.applyBinaryOp(val1, val2, op)
+		res, ok := applyBinaryOp(val1, val2, op)
 		if !ok {
 			panic(ok)
 		}

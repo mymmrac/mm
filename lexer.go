@@ -8,32 +8,6 @@ import (
 	"github.com/mymmrac/mm/utils"
 )
 
-type Operator int
-
-const (
-	OpNone Operator = iota
-	OpPlus
-	OpMinus
-	OpMultiply
-	OpDivide
-	OpPower
-	OpOpenParent
-	OpClosedParent
-
-	OpsLast
-)
-
-var textToOps = map[string]Operator{
-	"+": OpPlus,
-	"-": OpMinus,
-	"*": OpMultiply,
-	"/": OpDivide,
-	"^": OpPower,
-	"(": OpOpenParent,
-	")": OpClosedParent,
-}
-var opsToText map[Operator]string
-
 func init() {
 	utils.Assert(int(OpsLast)-1 == len(textToOps), "ops count does not match", OpsLast-1, len(textToOps))
 
@@ -72,6 +46,17 @@ func init() {
 	}
 	operatorPattern = regexp.MustCompile(opPattern)
 }
+
+type Location struct {
+	start int
+	end   int
+}
+
+func (l Location) Size() int {
+	return l.end - l.start
+}
+
+type Operator int
 
 type TokenKind string
 
