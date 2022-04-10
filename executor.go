@@ -38,7 +38,10 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 		return "", err
 	}
 
-	result := e.evaluate(tokens)
+	result, err := e.evaluate(tokens)
+	if err != nil {
+		return "", err
+	}
 	if result.kind != KindNumber {
 		return "", NewExprErr("returned invalid result type: "+result.String(), result.loc)
 	}
@@ -71,62 +74,64 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	return nil
 }
 
-func (e *Executor) evaluate(tokens []Token) Token {
+func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 	var values utils.Stack[Token]
 	var ops utils.Stack[Operator]
 
-	for i := 0; i < len(tokens); i++ {
-		if tokens[i].op == OpOpenParent {
-			ops.Push(tokens[i].op)
-		} else if tokens[i].kind == KindNumber {
-			values.Push(tokens[i])
-		} else if tokens[i].op == OpClosedParent {
+	eval := func() *ExprError {
+		op := ops.Pop()
+
+		val2 := values.Pop()
+		val1 := values.Pop()
+
+		res, ok := applyBinaryOp(val1, val2, op)
+		if !ok {
+			return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+		}
+
+		values.Push(res)
+		return nil
+	}
+
+	for _, token := range tokens {
+		if token.op == OpOpenParent {
+			ops.Push(token.op)
+		} else if token.kind == KindNumber {
+			values.Push(token)
+		} else if token.op == OpClosedParent {
 			for !ops.Empty() && ops.Top() != OpOpenParent {
-				val2 := values.Pop()
-				val1 := values.Pop()
-
-				op := ops.Pop()
-
-				res, ok := applyBinaryOp(val1, val2, op)
-				if !ok {
-					panic(ok)
+				if err := eval(); err != nil {
+					return Token{}, err
 				}
-				values.Push(res)
 			}
 
 			if !ops.Empty() {
 				ops.Pop()
 			}
 		} else {
-			for !ops.Empty() && opPrecedence(ops.Top()) >= opPrecedence(tokens[i].op) {
-				val2 := values.Pop()
-				val1 := values.Pop()
-
-				op := ops.Pop()
-
-				res, ok := applyBinaryOp(val1, val2, op)
-				if !ok {
-					panic(ok)
+			for !ops.Empty() && opPrecedence(ops.Top()) >= opPrecedence(token.op) {
+				if err := eval(); err != nil {
+					return Token{}, err
 				}
-				values.Push(res)
 			}
 
-			ops.Push(tokens[i].op)
+			ops.Push(token.op)
 		}
 	}
 
 	for !ops.Empty() {
-		val2 := values.Pop()
-		val1 := values.Pop()
-
-		op := ops.Pop()
-
-		res, ok := applyBinaryOp(val1, val2, op)
-		if !ok {
-			panic(ok)
+		if err := eval(); err != nil {
+			return Token{}, err
 		}
-		values.Push(res)
 	}
 
-	return values.Top()
+	switch values.Size() {
+	case 0:
+		return Token{}, NewExprErr("no values left", Location{})
+	case 1:
+		return values.Top(), nil
+	default:
+		values.Pop()
+		return Token{}, NewExprErr("not handled value left", values.Top().loc)
+	}
 }

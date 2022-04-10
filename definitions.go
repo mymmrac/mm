@@ -44,7 +44,12 @@ func opPrecedence(op Operator) int {
 
 func applyBinaryOp(a, b Token, op Operator) (Token, bool) {
 	if a.kind != KindNumber || b.kind != KindNumber {
-		return Token{}, false
+		return Token{
+			loc: Location{
+				start: a.loc.start,
+				end:   b.loc.end,
+			},
+		}, false
 	}
 
 	var result float64
@@ -60,7 +65,12 @@ func applyBinaryOp(a, b Token, op Operator) (Token, bool) {
 	case OpPower:
 		result = math.Pow(a.number, b.number)
 	default:
-		return Token{}, false
+		return Token{
+			loc: Location{
+				start: a.loc.start,
+				end:   b.loc.end,
+			},
+		}, false
 	}
 
 	return Token{

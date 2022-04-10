@@ -21,3 +21,7 @@ func (s *Stack[T]) Top() T {
 func (s *Stack[T]) Empty() bool {
 	return len(s.values) == 0
 }
+
+func (s *Stack[T]) Size() int {
+	return len(s.values)
+}
