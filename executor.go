@@ -38,14 +38,19 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 		return "", err
 	}
 
-	res := e.evaluate(tokens)
-	return strconv.FormatFloat(res, 'f', -1, 64), nil
+	result := e.evaluate(tokens)
+	if result.kind != KindNumber {
+		return "", NewExprErr("returned invalid result type: "+result.String(), result.loc)
+	}
+
+	return strconv.FormatFloat(result.number, 'f', -1, 64), nil
 }
 
 func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	for i, token := range tokens {
 		switch token.kind {
 		case KindIdentifier:
+			return NewExprErr("identifiers not supported yet", token.loc)
 		case KindNumber:
 			n, err := strconv.ParseFloat(token.text, 64)
 			if err != nil {
@@ -66,9 +71,9 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	return nil
 }
 
-func (e *Executor) evaluate(tokens []Token) float64 {
+func (e *Executor) evaluate(tokens []Token) Token {
 	// stack to store integer values.
-	var values utils.Stack[float64]
+	var values utils.Stack[Token]
 
 	// stack to store operators.
 	var ops utils.Stack[Operator]
@@ -77,7 +82,7 @@ func (e *Executor) evaluate(tokens []Token) float64 {
 		if tokens[i].op == OpOpenParent { // Current token is an opening brace, push it to 'ops'
 			ops.Push(tokens[i].op)
 		} else if tokens[i].kind == KindNumber { // Current token is a number, push it to stack for numbers
-			values.Push(tokens[i].number)
+			values.Push(tokens[i])
 		} else if tokens[i].op == OpClosedParent { // Closing brace encountered, solve entire brace.
 			for !ops.Empty() && ops.Top() != OpOpenParent {
 				val2 := values.Pop()

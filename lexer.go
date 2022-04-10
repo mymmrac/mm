@@ -16,6 +16,9 @@ func init() {
 		opsToText[op] = text
 	}
 
+	_, foundNoOp := opsToText[OpNoOp]
+	utils.Assert(foundNoOp == false, "no-op found", opsToText)
+
 	opsText := utils.Keys(textToOps)
 
 	var singleCharOps, multiCharOps []string

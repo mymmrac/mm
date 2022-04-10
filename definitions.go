@@ -1,9 +1,12 @@
 package main
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 const (
-	OpNone Operator = iota
+	OpNoOp Operator = iota
 	OpPlus
 	OpMinus
 	OpMultiply
@@ -39,19 +42,35 @@ func opPrecedence(op Operator) int {
 	}
 }
 
-func applyBinaryOp(a, b float64, op Operator) (float64, bool) {
+func applyBinaryOp(a, b Token, op Operator) (Token, bool) {
+	if a.kind != KindNumber || b.kind != KindNumber {
+		return Token{}, false
+	}
+
+	var result float64
 	switch op {
 	case OpPlus:
-		return a + b, true
+		result = a.number + b.number
 	case OpMinus:
-		return a - b, true
+		result = a.number - b.number
 	case OpMultiply:
-		return a * b, true
+		result = a.number * b.number
 	case OpDivide:
-		return a / b, true
+		result = a.number / b.number
 	case OpPower:
-		return math.Pow(a, b), true
+		result = math.Pow(a.number, b.number)
 	default:
-		return 0, false
+		return Token{}, false
 	}
+
+	return Token{
+		kind: KindNumber,
+		text: fmt.Sprintf("%s %s %s", a.text, opsToText[op], b.text),
+		loc: Location{
+			start: a.loc.start,
+			end:   b.loc.end,
+		},
+		number: result,
+		op:     0,
+	}, true
 }
