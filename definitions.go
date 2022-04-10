@@ -26,6 +26,7 @@ const (
 	OpOpenParent
 	OpClosedParent
 	OpInc
+	OpDec
 )
 
 var textToOps = map[string]Operator{
@@ -37,6 +38,7 @@ var textToOps = map[string]Operator{
 	"(":  OpOpenParent,
 	")":  OpClosedParent,
 	"++": OpInc,
+	"--": OpDec,
 }
 
 var opsToText = map[Operator]string{
@@ -51,6 +53,7 @@ var opsToText = map[Operator]string{
 	OpOpenParent:   "(",
 	OpClosedParent: ")",
 	OpInc:          "++",
+	OpDec:          "--",
 }
 
 type OpType string
@@ -71,6 +74,7 @@ var opsTypes = map[Operator]OpType{
 	OpClosedParent: TypeNoOp,
 	OpUnaryMinus:   TypeUnary,
 	OpInc:          TypeUnary,
+	OpDec:          TypeUnary,
 }
 
 func opPrecedence(op Operator) int {
@@ -81,11 +85,50 @@ func opPrecedence(op Operator) int {
 		return 2
 	case OpPower:
 		return 3
-	case OpUnaryMinus, OpInc:
+	case OpUnaryMinus, OpInc, OpDec:
 		return 4
 	default:
 		return 0
 	}
+}
+
+func applyUnaryOp(v, op Token) (Token, bool) {
+	if v.kind != KindNumber {
+		return Token{
+			loc: Location{
+				start: op.loc.start,
+				end:   v.loc.end,
+			},
+		}, false
+	}
+
+	var result float64
+	switch op.op {
+	case OpUnaryMinus:
+		result = -v.number
+	case OpInc:
+		result = v.number + 1
+	case OpDec:
+		result = v.number - 1
+	default:
+		return Token{
+			loc: Location{
+				start: op.loc.start,
+				end:   v.loc.end,
+			},
+		}, false
+	}
+
+	return Token{
+		kind: KindNumber,
+		text: fmt.Sprintf("%s %s", opsToText[op.op], v.text),
+		loc: Location{
+			start: op.loc.start,
+			end:   v.loc.end,
+		},
+		number: result,
+		op:     0,
+	}, true
 }
 
 func applyBinaryOp(v1, v2, op Token) (Token, bool) {
@@ -125,43 +168,6 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 		loc: Location{
 			start: v1.loc.start,
 			end:   v2.loc.end,
-		},
-		number: result,
-		op:     0,
-	}, true
-}
-
-func applyUnaryOp(v, op Token) (Token, bool) {
-	if v.kind != KindNumber {
-		return Token{
-			loc: Location{
-				start: op.loc.start,
-				end:   v.loc.end,
-			},
-		}, false
-	}
-
-	var result float64
-	switch op.op {
-	case OpUnaryMinus:
-		result = -v.number
-	case OpInc:
-		result = v.number + 1
-	default:
-		return Token{
-			loc: Location{
-				start: op.loc.start,
-				end:   v.loc.end,
-			},
-		}, false
-	}
-
-	return Token{
-		kind: KindNumber,
-		text: fmt.Sprintf("%s %s", opsToText[op.op], v.text),
-		loc: Location{
-			start: op.loc.start,
-			end:   v.loc.end,
 		},
 		number: result,
 		op:     0,
