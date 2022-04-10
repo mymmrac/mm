@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mymmrac/mm/utils"
+	"github.com/shopspring/decimal"
 )
 
 func init() {
@@ -57,7 +58,7 @@ type Token struct {
 	kind   TokenKind
 	text   string
 	loc    Location
-	number float64
+	number decimal.Decimal
 	op     Operator
 }
 

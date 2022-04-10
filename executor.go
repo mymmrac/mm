@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/mymmrac/mm/utils"
+	"github.com/shopspring/decimal"
 )
 
 type ExprError struct {
@@ -33,6 +34,9 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 	if err != nil {
 		return "", err
 	}
+	if len(tokens) == 0 {
+		return "", nil
+	}
 
 	if err = e.typeCheck(tokens); err != nil {
 		return "", err
@@ -46,7 +50,7 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 		return "", NewExprErr("returned invalid result type: "+result.String(), result.loc)
 	}
 
-	return strconv.FormatFloat(result.number, 'f', -1, 64), nil
+	return result.number.String(), nil
 }
 
 func (e *Executor) typeCheck(tokens []Token) *ExprError {
@@ -61,7 +65,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 			if err != nil {
 				return NewExprErr("parsing number: "+err.Error(), token.loc)
 			}
-			tokens[i].number = n
+			tokens[i].number = decimal.NewFromFloat(n)
 		case KindOperator:
 			op, ok := textToOps[token.text]
 			if !ok {

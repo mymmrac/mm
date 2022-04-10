@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
+
+	"github.com/shopspring/decimal"
 )
 
 type TokenKind string
@@ -102,14 +103,16 @@ func applyUnaryOp(v, op Token) (Token, bool) {
 		}, false
 	}
 
-	var result float64
+	one := decimal.NewFromInt(1)
+
+	var result decimal.Decimal
 	switch op.op {
 	case OpUnaryMinus:
-		result = -v.number
+		result = v.number.Neg()
 	case OpInc:
-		result = v.number + 1
+		result = v.number.Add(one)
 	case OpDec:
-		result = v.number - 1
+		result = v.number.Sub(one)
 	default:
 		return Token{
 			loc: Location{
@@ -141,18 +144,18 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 		}, false
 	}
 
-	var result float64
+	var result decimal.Decimal
 	switch op.op {
 	case OpPlus:
-		result = v1.number + v2.number
+		result = v1.number.Add(v2.number)
 	case OpMinus:
-		result = v1.number - v2.number
+		result = v1.number.Sub(v2.number)
 	case OpMultiply:
-		result = v1.number * v2.number
+		result = v1.number.Mul(v2.number)
 	case OpDivide:
-		result = v1.number / v2.number
+		result = v1.number.Div(v2.number)
 	case OpPower:
-		result = math.Pow(v1.number, v2.number)
+		result = v1.number.Pow(v2.number)
 	default:
 		return Token{
 			loc: Location{
