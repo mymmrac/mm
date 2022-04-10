@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/muesli/reflow/wordwrap"
 )
 
@@ -60,10 +60,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.Quit):
 			if m.input.Value() == "" {
 				return m, tea.Quit
-			} else {
-				m.input.SetValue("")
-				m.selectedExpr = historyNone
 			}
+
+			m.input.SetValue("")
+			m.selectedExpr = historyNone
 		case key.Matches(msg, keys.Execute):
 			expr := m.input.Value()
 			if strings.TrimSpace(expr) == "" {
