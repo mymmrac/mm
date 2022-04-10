@@ -175,5 +175,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("\nBye!")
+	fmt.Println("Bye!")
 }

@@ -25,17 +25,20 @@ const (
 	OpPower
 	OpOpenParent
 	OpClosedParent
+	OpInc
 )
 
 var textToOps = map[string]Operator{
-	"+": OpPlus,
-	"-": OpMinus,
-	"*": OpMultiply,
-	"/": OpDivide,
-	"^": OpPower,
-	"(": OpOpenParent,
-	")": OpClosedParent,
+	"+":  OpPlus,
+	"-":  OpMinus,
+	"*":  OpMultiply,
+	"/":  OpDivide,
+	"^":  OpPower,
+	"(":  OpOpenParent,
+	")":  OpClosedParent,
+	"++": OpInc,
 }
+
 var opsToText = map[Operator]string{
 	OpNoOp: "no-op",
 
@@ -47,6 +50,7 @@ var opsToText = map[Operator]string{
 	OpPower:        "^",
 	OpOpenParent:   "(",
 	OpClosedParent: ")",
+	OpInc:          "++",
 }
 
 type OpType string
@@ -66,6 +70,7 @@ var opsTypes = map[Operator]OpType{
 	OpOpenParent:   TypeNoOp,
 	OpClosedParent: TypeNoOp,
 	OpUnaryMinus:   TypeUnary,
+	OpInc:          TypeUnary,
 }
 
 func opPrecedence(op Operator) int {
@@ -76,7 +81,7 @@ func opPrecedence(op Operator) int {
 		return 2
 	case OpPower:
 		return 3
-	case OpUnaryMinus:
+	case OpUnaryMinus, OpInc:
 		return 4
 	default:
 		return 0
@@ -140,6 +145,8 @@ func applyUnaryOp(v, op Token) (Token, bool) {
 	switch op.op {
 	case OpUnaryMinus:
 		result = -v.number
+	case OpInc:
+		result = v.number + 1
 	default:
 		return Token{
 			loc: Location{
