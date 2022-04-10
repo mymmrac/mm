@@ -75,78 +75,78 @@ func opPrecedence(op Operator) int {
 	}
 }
 
-func applyBinaryOp(a, b Token, op Operator) (Token, bool) {
-	if a.kind != KindNumber || b.kind != KindNumber {
+func applyBinaryOp(v1, v2, op Token) (Token, bool) {
+	if v1.kind != KindNumber || v2.kind != KindNumber {
 		return Token{
 			loc: Location{
-				start: a.loc.start,
-				end:   b.loc.end,
+				start: v1.loc.start,
+				end:   v2.loc.end,
 			},
 		}, false
 	}
 
 	var result float64
-	switch op {
+	switch op.op {
 	case OpPlus:
-		result = a.number + b.number
+		result = v1.number + v2.number
 	case OpMinus:
-		result = a.number - b.number
+		result = v1.number - v2.number
 	case OpMultiply:
-		result = a.number * b.number
+		result = v1.number * v2.number
 	case OpDivide:
-		result = a.number / b.number
+		result = v1.number / v2.number
 	case OpPower:
-		result = math.Pow(a.number, b.number)
+		result = math.Pow(v1.number, v2.number)
 	default:
 		return Token{
 			loc: Location{
-				start: a.loc.start,
-				end:   b.loc.end,
+				start: v1.loc.start,
+				end:   v2.loc.end,
 			},
 		}, false
 	}
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s %s", a.text, opsToText[op], b.text),
+		text: fmt.Sprintf("%s %s %s", v1.text, opsToText[op.op], v2.text),
 		loc: Location{
-			start: a.loc.start,
-			end:   b.loc.end,
+			start: v1.loc.start,
+			end:   v2.loc.end,
 		},
 		number: result,
 		op:     0,
 	}, true
 }
 
-func applyUnaryOp(a Token, op Operator) (Token, bool) {
-	if a.kind != KindNumber {
+func applyUnaryOp(v, op Token) (Token, bool) {
+	if v.kind != KindNumber {
 		return Token{
 			loc: Location{
-				start: a.loc.start,
-				end:   a.loc.end, // TODO: Op as Token
+				start: op.loc.start,
+				end:   v.loc.end,
 			},
 		}, false
 	}
 
 	var result float64
-	switch op {
+	switch op.op {
 	case OpUnaryMinus:
-		result = -a.number
+		result = -v.number
 	default:
 		return Token{
 			loc: Location{
-				start: a.loc.start,
-				end:   a.loc.end,
+				start: op.loc.start,
+				end:   v.loc.end,
 			},
 		}, false
 	}
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s", opsToText[op], a.text),
+		text: fmt.Sprintf("%s %s", opsToText[op.op], v.text),
 		loc: Location{
-			start: a.loc.start,
-			end:   a.loc.end,
+			start: op.loc.start,
+			end:   v.loc.end,
 		},
 		number: result,
 		op:     0,

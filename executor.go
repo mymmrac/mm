@@ -75,29 +75,28 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 }
 
 func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
-	var values utils.Stack[Token]
-	var ops utils.Stack[Operator]
+	var values, ops utils.Stack[Token]
 
 	eval := func() *ExprError {
 		op := ops.Pop()
 
-		switch opsTypes[op] {
+		switch opsTypes[op.op] {
 		case TypeUnary:
-			val1 := values.Pop()
+			v := values.Pop()
 
-			res, ok := applyUnaryOp(val1, op)
+			res, ok := applyUnaryOp(v, op)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+				return NewExprErr("can't apply `"+opsToText[op.op]+"` operation", res.loc)
 			}
 
 			values.Push(res)
 		case TypeBinary:
-			val2 := values.Pop()
-			val1 := values.Pop()
+			v2 := values.Pop()
+			v1 := values.Pop()
 
-			res, ok := applyBinaryOp(val1, val2, op)
+			res, ok := applyBinaryOp(v1, v2, op)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+				return NewExprErr("can't apply `"+opsToText[op.op]+"` operation", res.loc)
 			}
 
 			values.Push(res)
@@ -108,11 +107,11 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 
 	for _, token := range tokens {
 		if token.op == OpOpenParent {
-			ops.Push(token.op)
+			ops.Push(token)
 		} else if token.kind == KindNumber {
 			values.Push(token)
 		} else if token.op == OpClosedParent {
-			for !ops.Empty() && ops.Top() != OpOpenParent {
+			for !ops.Empty() && ops.Top().op != OpOpenParent {
 				if err := eval(); err != nil {
 					return Token{}, err
 				}
@@ -122,13 +121,13 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 				ops.Pop()
 			}
 		} else {
-			for !ops.Empty() && opPrecedence(ops.Top()) >= opPrecedence(token.op) {
+			for !ops.Empty() && opPrecedence(ops.Top().op) >= opPrecedence(token.op) {
 				if err := eval(); err != nil {
 					return Token{}, err
 				}
 			}
 
-			ops.Push(token.op)
+			ops.Push(token)
 		}
 	}
 
