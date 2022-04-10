@@ -161,7 +161,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 				ops.Pop()
 			}
 		} else {
-			for !ops.Empty() && opPrecedence(ops.Top().op) >= opPrecedence(token.op) {
+			for !ops.Empty() && compareOpPrecedence(ops.Top(), token) {
 				if err := eval(); err != nil {
 					return Token{}, err
 				}
@@ -186,4 +186,11 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 		values.Pop()
 		return Token{}, NewExprErr("not handled value left", values.Top().loc)
 	}
+}
+
+func compareOpPrecedence(op1, op2 Token) bool {
+	if opPrecedence(op1.op) != opPrecedence(op2.op) {
+		return opPrecedence(op1.op) > opPrecedence(op2.op)
+	}
+	return op1.loc.start > op2.loc.start
 }
