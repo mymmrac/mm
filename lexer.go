@@ -34,6 +34,10 @@ func init() {
 	escapeAll := func(op string) string {
 		escaped := ""
 		for _, r := range op {
+			if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' {
+				escaped += fmt.Sprintf("%c", r)
+				continue
+			}
 			escaped += fmt.Sprintf("\\%c", r)
 		}
 		return escaped
