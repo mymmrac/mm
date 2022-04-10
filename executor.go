@@ -81,15 +81,28 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 	eval := func() *ExprError {
 		op := ops.Pop()
 
-		val2 := values.Pop()
-		val1 := values.Pop()
+		switch opsTypes[op] {
+		case TypeUnary:
+			val1 := values.Pop()
 
-		res, ok := applyBinaryOp(val1, val2, op)
-		if !ok {
-			return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+			res, ok := applyUnaryOp(val1, op)
+			if !ok {
+				return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+			}
+
+			values.Push(res)
+		case TypeBinary:
+			val2 := values.Pop()
+			val1 := values.Pop()
+
+			res, ok := applyBinaryOp(val1, val2, op)
+			if !ok {
+				return NewExprErr("can't apply `"+opsToText[op]+"` operation", res.loc)
+			}
+
+			values.Push(res)
 		}
 
-		values.Push(res)
 		return nil
 	}
 

@@ -9,7 +9,8 @@ import (
 )
 
 func init() {
-	utils.Assert(int(OpsLast)-1 == len(textToOps), "ops count does not match", OpsLast-1, len(textToOps))
+	utils.Assert(int(OpsLast)-1 == len(textToOps), "ops count does not match", OpsLast-1, textToOps)
+	utils.Assert(len(opsTypes) == len(textToOps), "ops count does not match ops type count", opsTypes, textToOps)
 
 	opsToText = make(map[Operator]string, len(textToOps))
 	for text, op := range textToOps {
@@ -40,9 +41,9 @@ func init() {
 
 	var opPattern string
 	if len(multiCharOps) > 0 {
-		opPattern = fmt.Sprintf(`^(:?[%s]|%s)`,
-			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""),
-			strings.Join(utils.MapSlice(multiCharOps, escapeAll), "|"))
+		opPattern = fmt.Sprintf(`^(:?%s|[%s])`,
+			strings.Join(utils.MapSlice(multiCharOps, escapeAll), "|"),
+			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""))
 	} else {
 		opPattern = fmt.Sprintf(`^[%s]`,
 			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""))
@@ -58,10 +59,6 @@ type Location struct {
 func (l Location) Size() int {
 	return l.end - l.start
 }
-
-type Operator int
-
-type TokenKind string
 
 type Token struct {
 	kind   TokenKind
@@ -80,12 +77,6 @@ type Lexer struct{}
 func NewLexer() *Lexer {
 	return &Lexer{}
 }
-
-const (
-	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
-	KindNumber     TokenKind = "number"     // `123`, `1.12`, `-12`, `1_2_3`
-	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
-)
 
 var (
 	identPattern    = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*`)
