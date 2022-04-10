@@ -50,6 +50,8 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 }
 
 func (e *Executor) typeCheck(tokens []Token) *ExprError {
+	var openParents utils.Stack[int]
+
 	for i, token := range tokens {
 		switch token.kind {
 		case KindIdentifier:
@@ -66,9 +68,22 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 				return NewExprErr("unknown operator: "+token.text, token.loc)
 			}
 			tokens[i].op = op
+
+			if op == OpOpenParent {
+				openParents.Push(i)
+			} else if op == OpClosedParent {
+				if openParents.Empty() {
+					return NewExprErr("unexpected closing parent", token.loc)
+				}
+				openParents.Pop()
+			}
 		default:
 			utils.Assert(false, "unreachable")
 		}
+	}
+
+	if !openParents.Empty() {
+		return NewExprErr("unclosed opened parent", tokens[openParents.Top()].loc)
 	}
 
 	for i, token := range tokens {
@@ -95,25 +110,33 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 	var values, ops utils.Stack[Token]
 
 	eval := func() *ExprError {
-		op := ops.Pop()
+		opToken := ops.Pop()
 
-		switch opsTypes[op.op] {
+		switch opsTypes[opToken.op] {
 		case TypeUnary:
+			if values.Size() < 1 {
+				return NewExprErr("not enough args for `"+opsToText[opToken.op]+"` operation", opToken.loc)
+			}
+
 			v := values.Pop()
 
-			res, ok := applyUnaryOp(v, op)
+			res, ok := applyUnaryOp(v, opToken)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[op.op]+"` operation", res.loc)
+				return NewExprErr("can't apply `"+opsToText[opToken.op]+"` operation", res.loc)
 			}
 
 			values.Push(res)
 		case TypeBinary:
+			if values.Size() < 2 {
+				return NewExprErr("not enough args for `"+opsToText[opToken.op]+"` operation", opToken.loc)
+			}
+
 			v2 := values.Pop()
 			v1 := values.Pop()
 
-			res, ok := applyBinaryOp(v1, v2, op)
+			res, ok := applyBinaryOp(v1, v2, opToken)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[op.op]+"` operation", res.loc)
+				return NewExprErr("can't apply `"+opsToText[opToken.op]+"` operation", res.loc)
 			}
 
 			values.Push(res)
