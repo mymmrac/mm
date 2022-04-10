@@ -71,6 +71,23 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		}
 	}
 
+	for i, token := range tokens {
+		if token.kind != KindOperator || token.op != OpMinus {
+			continue
+		}
+
+		// - ...
+		if i == 0 {
+			tokens[i].op = OpUnaryMinus
+			continue
+		}
+
+		// ... ( - ...
+		if i > 0 && tokens[i-1].kind == KindOperator && tokens[i-1].op == OpOpenParent {
+			tokens[i].op = OpUnaryMinus
+		}
+	}
+
 	return nil
 }
 

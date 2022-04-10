@@ -9,17 +9,6 @@ import (
 )
 
 func init() {
-	utils.Assert(int(OpsLast)-1 == len(textToOps), "ops count does not match", OpsLast-1, textToOps)
-	utils.Assert(len(opsTypes) == len(textToOps), "ops count does not match ops type count", opsTypes, textToOps)
-
-	opsToText = make(map[Operator]string, len(textToOps))
-	for text, op := range textToOps {
-		opsToText[op] = text
-	}
-
-	_, foundNoOp := opsToText[OpNoOp]
-	utils.Assert(foundNoOp == false, "no-op found", opsToText)
-
 	opsText := utils.Keys(textToOps)
 
 	var singleCharOps, multiCharOps []string

@@ -19,27 +19,35 @@ const (
 	OpNoOp Operator = iota
 	OpPlus
 	OpMinus
+	OpUnaryMinus
 	OpMultiply
 	OpDivide
 	OpPower
 	OpOpenParent
 	OpClosedParent
-	OpUnaryMinus
-
-	OpsLast
 )
 
 var textToOps = map[string]Operator{
-	"+":  OpPlus,
-	"-":  OpMinus,
-	"*":  OpMultiply,
-	"/":  OpDivide,
-	"^":  OpPower,
-	"(":  OpOpenParent,
-	")":  OpClosedParent,
-	"--": OpUnaryMinus,
+	"+": OpPlus,
+	"-": OpMinus,
+	"*": OpMultiply,
+	"/": OpDivide,
+	"^": OpPower,
+	"(": OpOpenParent,
+	")": OpClosedParent,
 }
-var opsToText map[Operator]string
+var opsToText = map[Operator]string{
+	OpNoOp: "no-op",
+
+	OpPlus:         "+",
+	OpMinus:        "-",
+	OpUnaryMinus:   "-",
+	OpMultiply:     "*",
+	OpDivide:       "/",
+	OpPower:        "^",
+	OpOpenParent:   "(",
+	OpClosedParent: ")",
+}
 
 type OpType string
 
