@@ -76,7 +76,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 
 			if op == OpOpenParent {
 				openParents.Push(i)
-			} else if op == OpClosedParent {
+			} else if op == OpCloseParent {
 				if openParents.Empty() {
 					return NewExprErr("unexpected closing parent", token.loc)
 				}
@@ -91,6 +91,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		return NewExprErr("unclosed opened parent", tokens[openParents.Top()].loc)
 	}
 
+	// TODO: Support any position of unary minus
 	for i, token := range tokens {
 		if token.kind != KindOperator || token.op != OpMinus {
 			continue
@@ -155,7 +156,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 			ops.Push(token)
 		} else if token.kind == KindNumber {
 			values.Push(token)
-		} else if token.op == OpClosedParent {
+		} else if token.op == OpCloseParent {
 			for !ops.Empty() && ops.Top().op != OpOpenParent {
 				if err := eval(); err != nil {
 					return Token{}, err

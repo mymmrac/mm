@@ -25,7 +25,7 @@ const (
 	OpDivide
 	OpPower
 	OpOpenParent
-	OpClosedParent
+	OpCloseParent
 	OpInc
 	OpDec
 )
@@ -37,7 +37,7 @@ var textToOps = map[string]Operator{
 	"/":  OpDivide,
 	"^":  OpPower,
 	"(":  OpOpenParent,
-	")":  OpClosedParent,
+	")":  OpCloseParent,
 	"++": OpInc,
 	"--": OpDec,
 }
@@ -45,16 +45,16 @@ var textToOps = map[string]Operator{
 var opsToText = map[Operator]string{
 	OpNoOp: "no-op",
 
-	OpPlus:         "+",
-	OpMinus:        "-",
-	OpUnaryMinus:   "-",
-	OpMultiply:     "*",
-	OpDivide:       "/",
-	OpPower:        "^",
-	OpOpenParent:   "(",
-	OpClosedParent: ")",
-	OpInc:          "++",
-	OpDec:          "--",
+	OpPlus:        "+",
+	OpMinus:       "-",
+	OpUnaryMinus:  "-",
+	OpMultiply:    "*",
+	OpDivide:      "/",
+	OpPower:       "^",
+	OpOpenParent:  "(",
+	OpCloseParent: ")",
+	OpInc:         "++",
+	OpDec:         "--",
 }
 
 type OpType string
@@ -66,16 +66,16 @@ const (
 )
 
 var opsTypes = map[Operator]OpType{
-	OpPlus:         TypeBinary,
-	OpMinus:        TypeBinary,
-	OpMultiply:     TypeBinary,
-	OpDivide:       TypeBinary,
-	OpPower:        TypeBinary,
-	OpOpenParent:   TypeNoOp,
-	OpClosedParent: TypeNoOp,
-	OpUnaryMinus:   TypeUnary,
-	OpInc:          TypeUnary,
-	OpDec:          TypeUnary,
+	OpPlus:        TypeBinary,
+	OpMinus:       TypeBinary,
+	OpMultiply:    TypeBinary,
+	OpDivide:      TypeBinary,
+	OpPower:       TypeBinary,
+	OpOpenParent:  TypeNoOp,
+	OpCloseParent: TypeNoOp,
+	OpUnaryMinus:  TypeUnary,
+	OpInc:         TypeUnary,
+	OpDec:         TypeUnary,
 }
 
 func opPrecedence(op Operator) int {
