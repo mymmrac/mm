@@ -155,6 +155,9 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 	case OpDivide:
 		result = v1.number.Div(v2.number)
 	case OpPower:
+		if !v2.number.IsInteger() {
+			return v2, false
+		}
 		result = v1.number.Pow(v2.number)
 	default:
 		return Token{
