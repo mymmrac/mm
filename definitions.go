@@ -28,6 +28,7 @@ const (
 	OpCloseParent
 	OpInc
 	OpDec
+	OpMod
 )
 
 var textToOps = map[string]Operator{
@@ -40,6 +41,7 @@ var textToOps = map[string]Operator{
 	")":  OpCloseParent,
 	"++": OpInc,
 	"--": OpDec,
+	"%":  OpMod,
 }
 
 var opsToText = map[Operator]string{
@@ -55,6 +57,7 @@ var opsToText = map[Operator]string{
 	OpCloseParent: ")",
 	OpInc:         "++",
 	OpDec:         "--",
+	OpMod:         "%",
 }
 
 type OpType string
@@ -76,13 +79,14 @@ var opsTypes = map[Operator]OpType{
 	OpUnaryMinus:  TypeUnary,
 	OpInc:         TypeUnary,
 	OpDec:         TypeUnary,
+	OpMod:         TypeBinary,
 }
 
 func opPrecedence(op Operator) int {
 	switch op {
 	case OpPlus, OpMinus:
 		return 1
-	case OpMultiply, OpDivide:
+	case OpMultiply, OpDivide, OpMod:
 		return 2
 	case OpPower:
 		return 3
@@ -159,6 +163,14 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 			return v2, false
 		}
 		result = v1.number.Pow(v2.number)
+	case OpMod:
+		if !v1.number.IsInteger() {
+			return v1, false
+		}
+		if !v2.number.IsInteger() {
+			return v2, false
+		}
+		result = v1.number.Mod(v2.number)
 	default:
 		return Token{
 			loc: Location{

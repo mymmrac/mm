@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/shopspring/decimal"
@@ -146,6 +147,8 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 			}
 
 			values.Push(res)
+		default:
+			return NewExprErr(fmt.Sprintf("unkown type of `%s` operation", opToken.text), opToken.loc)
 		}
 
 		return nil
