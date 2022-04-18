@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/mymmrac/mm/utils"
 )
@@ -19,6 +20,10 @@ const (
 
 type model struct {
 	input textinput.Model
+
+	liveResult   string
+	liveError    bool
+	liveErrorLoc Location
 
 	selectedExpr int
 	expressions  []string
@@ -32,7 +37,7 @@ type model struct {
 
 func newModel() *model {
 	input := textinput.New()
-	input.Placeholder = "Expression..."
+	input.Placeholder = "..."
 	input.Prompt = "> "
 	input.Focus()
 
@@ -49,10 +54,13 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyUpdate := false
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.Type != tea.KeyLeft && msg.Type != tea.KeyRight {
 			m.exprError = nil
+			keyUpdate = true
 		}
 
 		switch {
@@ -140,8 +148,26 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var inputCmd tea.Cmd
 	m.input, inputCmd = m.input.Update(msg)
+
+	if keyUpdate {
+		liveResult, err := m.executor.Execute(m.input.Value())
+		if err != nil {
+			m.liveResult = ""
+			m.liveError = true
+			m.liveErrorLoc = err.loc
+		} else {
+			m.liveResult = liveResult
+			m.liveError = false
+		}
+	}
+
 	return m, inputCmd
 }
+
+var (
+	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	mutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+)
 
 func (m *model) View() string {
 	s := strings.Builder{}
@@ -156,15 +182,23 @@ func (m *model) View() string {
 	m.input.Width = m.width - len(m.input.Prompt) - 1
 	s.WriteString(m.input.View())
 
-	if m.exprError != nil {
-		err := m.exprError
+	if m.liveError || m.exprError != nil {
+		loc := m.liveErrorLoc
+		if m.exprError != nil {
+			loc = m.exprError.loc
+		}
 
 		s.WriteString(fmt.Sprintf(
 			"\n%s%s\n",
-			strings.Repeat(" ", err.loc.start+len(m.input.Prompt)),
-			strings.Repeat("^", err.loc.Size()),
+			strings.Repeat(" ", loc.start+len(m.input.Prompt)),
+			errorStyle.Render(strings.Repeat("^", loc.Size())),
 		))
-		s.WriteString(utils.Wrap("Syntax error: "+err.text, m.width))
+	} else if m.liveResult != "" {
+		s.WriteString(utils.Wrap(mutedStyle.Render("\n=> "+m.liveResult+"\n"), m.width))
+	}
+
+	if m.exprError != nil {
+		s.WriteString(utils.Wrap("Error: "+m.exprError.text, m.width))
 	}
 
 	return s.String()
