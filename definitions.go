@@ -157,6 +157,9 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 	case OpMultiply:
 		result = v1.number.Mul(v2.number)
 	case OpDivide:
+		if v2.number.IsZero() {
+			return v2, false
+		}
 		result = v1.number.Div(v2.number)
 	case OpPower:
 		if !v2.number.IsInteger() {
