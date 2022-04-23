@@ -58,6 +58,7 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	var openParents utils.Stack[int]
 
+	// Identify tokens
 	for i, token := range tokens {
 		switch token.kind {
 		case KindIdentifier:
@@ -75,6 +76,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 			}
 			tokens[i].op = op
 
+			// Validate parents
 			if op == OpOpenParent {
 				openParents.Push(i)
 			} else if op == OpCloseParent {
@@ -88,25 +90,83 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		}
 	}
 
+	// Validate parents
 	if !openParents.Empty() {
 		return NewExprErr("unclosed opened parent", tokens[openParents.Top()].loc)
 	}
 
-	// TODO: Support any position of unary minus
+	// Type check operators arguments
+	values := 0
+	ops := utils.Stack[int]{}
+
+	validate := func() bool {
+		i := ops.Pop()
+		op := tokens[i].op
+
+		switch opsTypes[op] {
+		case TypeUnary:
+			if values < 1 {
+				return false
+			}
+		case TypeBinary:
+			if values < 2 {
+				// Convert minus into unary minus
+				if op == OpMinus && values == 1 {
+					tokens[i].op = OpUnaryMinus
+					return true
+				}
+
+				return false
+			}
+			values -= 1
+		default:
+			utils.Assert(false, "unreachable")
+		}
+
+		return true
+	}
+
+	parentValues := utils.Stack[int]{}
+
 	for i, token := range tokens {
-		if token.kind != KindOperator || token.op != OpMinus {
-			continue
-		}
+		if token.op == OpOpenParent {
+			ops.Push(i)
+			parentValues.Push(values)
+		} else if token.kind == KindNumber {
+			values++
+		} else if token.op == OpCloseParent {
+			beforeParents := values
+			values -= parentValues.Pop()
 
-		// - ...
-		if i == 0 {
-			tokens[i].op = OpUnaryMinus
-			continue
-		}
+			for !ops.Empty() && tokens[ops.Top()].op != OpOpenParent {
+				op := ops.Top()
+				if ok := validate(); !ok {
+					return NewExprErr("err1", tokens[op].loc) // TODO: Fix error reporting
+				}
+			}
 
-		// ... ( - ...
-		if i > 0 && tokens[i-1].kind == KindOperator && tokens[i-1].op == OpOpenParent {
-			tokens[i].op = OpUnaryMinus
+			// FIXME: In case of some error with parents, this should be `values += beforeParents`
+			values = beforeParents
+
+			if !ops.Empty() {
+				ops.Pop()
+			}
+		} else {
+			for !ops.Empty() && compareOpPrecedence(tokens[ops.Top()], token) {
+				op := ops.Top()
+				if ok := validate(); !ok {
+					return NewExprErr("err2", tokens[op].loc) // TODO: Fix error reporting
+				}
+			}
+
+			ops.Push(i)
+		}
+	}
+
+	for !ops.Empty() {
+		op := ops.Top()
+		if ok := validate(); !ok {
+			return NewExprErr(fmt.Sprintf("err3 %d %s", values, ops), tokens[op].loc) // TODO: Fix error reporting
 		}
 	}
 
@@ -129,13 +189,13 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 
 			res, ok := applyUnaryOp(v, opToken)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[opToken.op]+"` operation", res.loc)
+				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
 			}
 
 			values.Push(res)
 		case TypeBinary:
 			if values.Size() < 2 {
-				return NewExprErr("not enough args for `"+opsToText[opToken.op]+"` operation", opToken.loc)
+				return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
 			}
 
 			v2 := values.Pop()
@@ -143,7 +203,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 
 			res, ok := applyBinaryOp(v1, v2, opToken)
 			if !ok {
-				return NewExprErr("can't apply `"+opsToText[opToken.op]+"` operation", res.loc)
+				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
 			}
 
 			values.Push(res)
