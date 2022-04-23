@@ -51,6 +51,9 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "add_multiple", expr: "1 + 10 + 100 + 1000", result: "1111", loc: nl(t)},
 
 		{name: "sub", expr: "123.321 - 321.123", result: "-197.802", loc: nl(t)},
+		{name: "sub_compact_ expr_1", expr: "1-2", result: "-1", loc: nl(t)},
+		{name: "sub_compact_ expr_2", expr: "1-(2)", result: "-1", loc: nl(t)},
+		{name: "sub_compact_ expr_3", expr: "(1)-2", result: "-1", loc: nl(t)},
 
 		{name: "unary_minus", expr: "- 321.123", result: "-321.123", loc: nl(t)},
 
