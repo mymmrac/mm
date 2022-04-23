@@ -75,7 +75,7 @@ func NewLexer() *Lexer {
 
 var (
 	identPattern    = regexp.MustCompile(`^[a-zA-Z]\w*`)
-	numberPattern   = regexp.MustCompile(`^-?[\d_]+(:?\.[\d_]+)?`)
+	numberPattern   = regexp.MustCompile(`^[\d_]+(:?\.[\d_]+)?`)
 	operatorPattern *regexp.Regexp
 
 	unknownPattern = regexp.MustCompile(`^[^ \t]+`)
