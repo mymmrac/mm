@@ -60,6 +60,7 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "bug_unary_minus", expr: "1 + ( - 1 )", result: "0", loc: nl(t)},
 		{name: "bug_unary_minus", expr: "1 + ( - 2 )", result: "-1", loc: nl(t)},
 		{name: "bug_unary_minus", expr: "- (1 + 1)", result: "-2", loc: nl(t)},
+		{name: "bug_unary_minus", expr: "- (1 + 1 + 1)", result: "-3", loc: nl(t)},
 
 		{name: "expression", expr: "9 @ (3+1) + 17 / (6 - 12)", result: "-1.101282525764456", loc: nl(t)},
 
@@ -71,10 +72,21 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "err_power", expr: "2 ^ -3", result: "", loc: l(t, 2, 3)},
 		{name: "err_power", expr: "-2.1 ^ 3.13", result: "", loc: l(t, 7, 11)},
 
+		{name: "parents", expr: "1 + (1)", result: "2", loc: nl(t)},
+		{name: "parents", expr: "1 + (1 + 1 + 1)", result: "4", loc: nl(t)},
+		{name: "parents", expr: "1 - (1 + 1 + 1)", result: "-2", loc: nl(t)},
+		{name: "parents", expr: "1 - (1 + 1 - 1)", result: "0", loc: nl(t)},
+		{name: "parents", expr: "(-1)", result: "-1", loc: nl(t)},
+		{name: "parents", expr: "(-1) + 2", result: "1", loc: nl(t)},
+		{name: "parents", expr: "- (-1) + 2", result: "3", loc: nl(t)},
+		{name: "parents", expr: "(1 + (- 2 3) - 4)", result: "-4", loc: nl(t)},
+		{name: "parents", expr: "(1 + (- 2 (3 + 5)) - (4 - 2))", result: "-7", loc: nl(t)},
+
 		//{name: "", expr: "", result: "", loc: nl(t)},
 	}
 
-	e := NewExecutor()
+	d := &Debugger{}
+	e := NewExecutor(d)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := e.Execute(tt.expr)

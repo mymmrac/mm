@@ -18,6 +18,31 @@ const (
 	historyDisabled = -2
 )
 
+type Debugger struct {
+	text    string
+	enabled bool
+}
+
+func (d *Debugger) SetEnabled(enabled bool) {
+	d.enabled = enabled
+}
+
+func (d *Debugger) Enabled() bool {
+	return d.enabled
+}
+
+func (d *Debugger) Debug(args ...any) {
+	d.text += fmt.Sprint(args...) + "\n"
+}
+
+func (d *Debugger) Clean() {
+	d.text = ""
+}
+
+func (d *Debugger) Text() string {
+	return d.text
+}
+
 type model struct {
 	input textinput.Model
 
@@ -32,6 +57,8 @@ type model struct {
 	executor  *Executor
 	exprError *ExprError
 
+	debugger *Debugger
+
 	width, height int
 }
 
@@ -41,11 +68,15 @@ func newModel() *model {
 	input.Prompt = "> "
 	input.Focus()
 
+	debugger := &Debugger{}
+	debugger.SetEnabled(false)
+
 	return &model{
 		input:        input,
 		expressions:  make([]string, 0),
 		selectedExpr: historyNone,
-		executor:     NewExecutor(),
+		executor:     NewExecutor(debugger),
+		debugger:     debugger,
 	}
 }
 
@@ -199,6 +230,10 @@ func (m *model) View() string {
 
 	if m.exprError != nil {
 		s.WriteString(utils.Wrap("Error: "+m.exprError.text, m.width))
+	}
+
+	if m.debugger.Enabled() {
+		s.WriteString(strings.Repeat("\n", 3) + utils.Wrap(m.debugger.Text(), m.width))
 	}
 
 	return s.String()

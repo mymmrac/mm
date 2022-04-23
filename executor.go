@@ -22,16 +22,20 @@ func NewExprErr(text string, loc Location) *ExprError {
 }
 
 type Executor struct {
-	lexer *Lexer
+	lexer    *Lexer
+	debugger *Debugger
 }
 
-func NewExecutor() *Executor {
+func NewExecutor(debugger *Debugger) *Executor {
 	return &Executor{
-		lexer: NewLexer(),
+		lexer:    NewLexer(),
+		debugger: debugger,
 	}
 }
 
 func (e *Executor) Execute(expr string) (string, *ExprError) {
+	e.debugger.Clean()
+
 	tokens, err := e.lexer.Tokenize(expr)
 	if err != nil {
 		return "", err
@@ -43,6 +47,8 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 	if err = e.typeCheck(tokens); err != nil {
 		return "", err
 	}
+
+	e.debugger.Debug("Tokens ", tokens)
 
 	result, err := e.evaluate(tokens)
 	if err != nil {
@@ -103,6 +109,8 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		i := ops.Pop()
 		op := tokens[i].op
 
+		e.debugger.Debug(values, " ", opsToText[op], " ", tokens[i].loc)
+
 		switch opsTypes[op] {
 		case TypeUnary:
 			if values < 1 {
@@ -135,8 +143,10 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		} else if token.kind == KindNumber {
 			values++
 		} else if token.op == OpCloseParent {
-			beforeParents := values
-			values -= parentValues.Pop()
+			e.debugger.Debug(parentValues)
+
+			beforeParents := parentValues.Pop()
+			values -= beforeParents
 
 			for !ops.Empty() && tokens[ops.Top()].op != OpOpenParent {
 				op := ops.Top()
@@ -145,8 +155,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 				}
 			}
 
-			// FIXME: In case of some error with parents, this should be `values += beforeParents`
-			values = beforeParents
+			values = beforeParents + 1
 
 			if !ops.Empty() {
 				ops.Pop()
