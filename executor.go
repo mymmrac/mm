@@ -149,9 +149,9 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 			values -= beforeParents
 
 			for !ops.Empty() && tokens[ops.Top()].op != OpOpenParent {
-				op := ops.Top()
+				opToken := tokens[ops.Top()]
 				if ok := validate(); !ok {
-					return NewExprErr("err1", tokens[op].loc) // TODO: Fix error reporting
+					return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
 				}
 			}
 
@@ -162,9 +162,9 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 			}
 		} else {
 			for !ops.Empty() && compareOpPrecedence(tokens[ops.Top()], token) {
-				op := ops.Top()
+				opToken := tokens[ops.Top()]
 				if ok := validate(); !ok {
-					return NewExprErr("err2", tokens[op].loc) // TODO: Fix error reporting
+					return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
 				}
 			}
 
@@ -173,9 +173,9 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	}
 
 	for !ops.Empty() {
-		op := ops.Top()
+		opToken := tokens[ops.Top()]
 		if ok := validate(); !ok {
-			return NewExprErr(fmt.Sprintf("err3 %d %s", values, ops), tokens[op].loc) // TODO: Fix error reporting
+			return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
 		}
 	}
 
