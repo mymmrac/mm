@@ -22,10 +22,6 @@ func ForeachSlice[T any](slice []T, f func(T)) {
 	}
 }
 
-func ToString[T fmt.Stringer](a T) string {
-	return a.String()
-}
-
 func TrimWhitespacesAndCount(text string) (string, int) {
 	newText := strings.TrimLeft(text, " \t")
 	return newText, len(text) - len(newText)

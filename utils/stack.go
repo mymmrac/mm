@@ -1,5 +1,7 @@
 package utils
 
+import "fmt"
+
 type Stack[T any] struct {
 	values []T
 }
@@ -24,4 +26,8 @@ func (s *Stack[T]) Empty() bool {
 
 func (s *Stack[T]) Size() int {
 	return len(s.values)
+}
+
+func (s Stack[T]) String() string {
+	return fmt.Sprint(s.values)
 }

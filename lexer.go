@@ -64,7 +64,7 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("{%s}:%d-%d `%s`", t.kind, t.loc.start, t.loc.end, t.text)
+	return fmt.Sprintf("{%s}:[%d-%d] `%s` %s %q", t.kind, t.loc.start, t.loc.end, t.text, t.number, opsToText[t.op])
 }
 
 type Lexer struct{}

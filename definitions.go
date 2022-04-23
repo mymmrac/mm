@@ -46,7 +46,7 @@ var textToOps = map[string]Operator{
 	"@":  OpRoot,
 }
 
-var opsToText = map[Operator]string{
+var opsToSymbolText = map[Operator]string{
 	OpNoOp: "no-op",
 
 	OpPlus:        "+",
@@ -61,6 +61,22 @@ var opsToText = map[Operator]string{
 	OpDec:         "--",
 	OpMod:         "%",
 	OpRoot:        "@",
+}
+
+var opsToText = map[Operator]string{
+	OpNoOp:        "no-op",
+	OpPlus:        "plus",
+	OpMinus:       "minus",
+	OpUnaryMinus:  "unary minus",
+	OpMultiply:    "multiply",
+	OpDivide:      "divide",
+	OpPower:       "power",
+	OpOpenParent:  "open parent",
+	OpCloseParent: "close parent",
+	OpInc:         "increment",
+	OpDec:         "decrement",
+	OpMod:         "mod",
+	OpRoot:        "root",
 }
 
 type OpType string
@@ -132,7 +148,7 @@ func applyUnaryOp(v, op Token) (Token, bool) {
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s", opsToText[op.op], v.text),
+		text: fmt.Sprintf("%s %s", opsToSymbolText[op.op], v.text),
 		loc: Location{
 			start: op.loc.start,
 			end:   v.loc.end,
@@ -194,7 +210,7 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s %s", v1.text, opsToText[op.op], v2.text),
+		text: fmt.Sprintf("%s %s %s", v1.text, opsToSymbolText[op.op], v2.text),
 		loc: Location{
 			start: v1.loc.start,
 			end:   v2.loc.end,
