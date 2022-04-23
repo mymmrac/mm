@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/mymmrac/mm/utils"
 	"github.com/shopspring/decimal"
 )
 
@@ -24,65 +25,81 @@ type Operator int
 
 const (
 	OpNoOp Operator = iota
+	OpOpenParent
+	OpCloseParent
 	OpPlus
 	OpMinus
 	OpUnaryMinus
 	OpMultiply
 	OpDivide
 	OpPower
-	OpOpenParent
-	OpCloseParent
 	OpInc
 	OpDec
 	OpMod
 	OpRoot
+	OpRound
+	OpFloor
+	OpCeil
+	OpAbs
 )
 
 var textToOps = map[string]Operator{
-	"+":  OpPlus,
-	"-":  OpMinus,
-	"*":  OpMultiply,
-	"/":  OpDivide,
-	"^":  OpPower,
-	"(":  OpOpenParent,
-	")":  OpCloseParent,
-	"++": OpInc,
-	"--": OpDec,
-	"%":  OpMod,
-	"@":  OpRoot,
+	"(":      OpOpenParent,
+	")":      OpCloseParent,
+	"+":      OpPlus,
+	"-":      OpMinus,
+	"*":      OpMultiply,
+	"/":      OpDivide,
+	"^":      OpPower,
+	"++":     OpInc,
+	"--":     OpDec,
+	"%":      OpMod,
+	"@":      OpRoot,
+	"!round": OpRound,
+	"!floor": OpFloor,
+	"!ceil":  OpCeil,
+	"!abs":   OpAbs,
 }
 
 var opsToSymbolText = map[Operator]string{
 	OpNoOp: "no-op",
 
+	OpOpenParent:  "(",
+	OpCloseParent: ")",
 	OpPlus:        "+",
 	OpMinus:       "-",
 	OpUnaryMinus:  "-",
 	OpMultiply:    "*",
 	OpDivide:      "/",
 	OpPower:       "^",
-	OpOpenParent:  "(",
-	OpCloseParent: ")",
 	OpInc:         "++",
 	OpDec:         "--",
 	OpMod:         "%",
 	OpRoot:        "@",
+	OpRound:       "!round",
+	OpFloor:       "!floor",
+	OpCeil:        "!ceil",
+	OpAbs:         "!abs",
 }
 
 var opsToText = map[Operator]string{
 	OpNoOp:        "no-op",
+	OpOpenParent:  "open parent",
+	OpCloseParent: "close parent",
 	OpPlus:        "plus",
 	OpMinus:       "minus",
 	OpUnaryMinus:  "unary minus",
 	OpMultiply:    "multiply",
 	OpDivide:      "divide",
 	OpPower:       "power",
-	OpOpenParent:  "open parent",
-	OpCloseParent: "close parent",
 	OpInc:         "increment",
 	OpDec:         "decrement",
 	OpMod:         "mod",
 	OpRoot:        "root",
+	OpRound:       "round",
+	OpFloor:       "floor",
+	OpCeil:        "ceil",
+	OpAbs:         "abs",
 }
 
 type OpType string
@@ -94,31 +111,40 @@ const (
 )
 
 var opsTypes = map[Operator]OpType{
+	OpOpenParent:  TypeNoOp,
+	OpCloseParent: TypeNoOp,
 	OpPlus:        TypeBinary,
 	OpMinus:       TypeBinary,
 	OpMultiply:    TypeBinary,
 	OpDivide:      TypeBinary,
 	OpPower:       TypeBinary,
-	OpOpenParent:  TypeNoOp,
-	OpCloseParent: TypeNoOp,
 	OpUnaryMinus:  TypeUnary,
 	OpInc:         TypeUnary,
 	OpDec:         TypeUnary,
 	OpMod:         TypeBinary,
 	OpRoot:        TypeBinary,
+	OpRound:       TypeUnary,
+	OpFloor:       TypeUnary,
+	OpCeil:        TypeUnary,
+	OpAbs:         TypeUnary,
 }
 
 func opPrecedence(op Operator) int {
 	switch op {
+	case OpOpenParent, OpCloseParent:
+		return 0
 	case OpPlus, OpMinus:
 		return 1
 	case OpMultiply, OpDivide, OpMod:
 		return 2
 	case OpPower, OpRoot:
 		return 3
-	case OpUnaryMinus, OpInc, OpDec:
+	case OpInc, OpDec, OpRound, OpFloor, OpCeil, OpAbs:
 		return 4
+	case OpUnaryMinus:
+		return 5
 	default:
+		utils.Assert(false, "unreachable")
 		return 0
 	}
 }
@@ -149,6 +175,14 @@ func applyUnaryOp(v, op Token, variables map[Token]decimal.Decimal) (Token, bool
 		result = number.Add(one)
 	case OpDec:
 		result = number.Sub(one)
+	case OpRound:
+		result = number.Round(0)
+	case OpFloor:
+		result = number.Floor()
+	case OpCeil:
+		result = number.Ceil()
+	case OpAbs:
+		result = number.Abs()
 	default:
 		return Token{
 			loc: Location{
