@@ -29,6 +29,7 @@ const (
 	OpInc
 	OpDec
 	OpMod
+	OpRoot
 )
 
 var textToOps = map[string]Operator{
@@ -42,6 +43,7 @@ var textToOps = map[string]Operator{
 	"++": OpInc,
 	"--": OpDec,
 	"%":  OpMod,
+	"@":  OpRoot,
 }
 
 var opsToText = map[Operator]string{
@@ -58,6 +60,7 @@ var opsToText = map[Operator]string{
 	OpInc:         "++",
 	OpDec:         "--",
 	OpMod:         "%",
+	OpRoot:        "@",
 }
 
 type OpType string
@@ -80,6 +83,7 @@ var opsTypes = map[Operator]OpType{
 	OpInc:         TypeUnary,
 	OpDec:         TypeUnary,
 	OpMod:         TypeBinary,
+	OpRoot:        TypeBinary,
 }
 
 func opPrecedence(op Operator) int {
@@ -88,7 +92,7 @@ func opPrecedence(op Operator) int {
 		return 1
 	case OpMultiply, OpDivide, OpMod:
 		return 2
-	case OpPower:
+	case OpPower, OpRoot:
 		return 3
 	case OpUnaryMinus, OpInc, OpDec:
 		return 4
@@ -174,6 +178,11 @@ func applyBinaryOp(v1, v2, op Token) (Token, bool) {
 			return v2, false
 		}
 		result = v1.number.Mod(v2.number)
+	case OpRoot:
+		if !v2.number.IsInteger() {
+			return v2, false
+		}
+		result = DecimalRoot(v1.number, v2.number)
 	default:
 		return Token{
 			loc: Location{
