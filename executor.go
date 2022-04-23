@@ -44,31 +44,45 @@ func (e *Executor) Execute(expr string) (string, *ExprError) {
 		return "", nil
 	}
 
-	if err = e.typeCheck(tokens); err != nil {
+	variables := make(map[Token]decimal.Decimal)
+
+	if err = e.typeCheck(tokens, variables); err != nil {
 		return "", err
 	}
 
 	e.debugger.Debug("Tokens ", tokens)
 
-	result, err := e.evaluate(tokens)
+	result, err := e.evaluate(tokens, variables)
 	if err != nil {
 		return "", err
 	}
-	if result.kind != KindNumber {
+
+	switch result.kind {
+	case KindNumber:
+		return result.number.String(), nil
+	case KindIdentifier:
+		number, ok := variables[result]
+		if !ok {
+			return "", NewExprErr("returned unknown identifier: "+result.String(), result.loc)
+		}
+		return number.String(), nil
+	default:
 		return "", NewExprErr("returned invalid result type: "+result.String(), result.loc)
 	}
-
-	return result.number.String(), nil
 }
 
-func (e *Executor) typeCheck(tokens []Token) *ExprError {
+func (e *Executor) typeCheck(tokens []Token, variables map[Token]decimal.Decimal) *ExprError {
 	var openParents utils.Stack[int]
 
 	// Identify tokens
 	for i, token := range tokens {
 		switch token.kind {
 		case KindIdentifier:
-			return NewExprErr("identifiers not supported yet", token.loc)
+			value, ok := constants[token.text]
+			if !ok {
+				return NewExprErr("unknown identifier `"+token.text+"`", token.loc)
+			}
+			variables[token] = value
 		case KindNumber:
 			n, err := strconv.ParseFloat(token.text, 64)
 			if err != nil {
@@ -140,7 +154,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 		if token.op == OpOpenParent {
 			ops.Push(i)
 			parentValues.Push(values)
-		} else if token.kind == KindNumber {
+		} else if token.kind == KindNumber || token.kind == KindIdentifier {
 			values++
 		} else if token.op == OpCloseParent {
 			e.debugger.Debug(parentValues)
@@ -182,7 +196,7 @@ func (e *Executor) typeCheck(tokens []Token) *ExprError {
 	return nil
 }
 
-func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
+func (e *Executor) evaluate(tokens []Token, variables map[Token]decimal.Decimal) (Token, *ExprError) {
 	var values, ops utils.Stack[Token]
 
 	eval := func() *ExprError {
@@ -196,7 +210,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 
 			v := values.Pop()
 
-			res, ok := applyUnaryOp(v, opToken)
+			res, ok := applyUnaryOp(v, opToken, variables)
 			if !ok {
 				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
 			}
@@ -210,7 +224,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 			v2 := values.Pop()
 			v1 := values.Pop()
 
-			res, ok := applyBinaryOp(v1, v2, opToken)
+			res, ok := applyBinaryOp(v1, v2, opToken, variables)
 			if !ok {
 				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
 			}
@@ -226,7 +240,7 @@ func (e *Executor) evaluate(tokens []Token) (Token, *ExprError) {
 	for _, token := range tokens {
 		if token.op == OpOpenParent {
 			ops.Push(token)
-		} else if token.kind == KindNumber {
+		} else if token.kind == KindNumber || token.kind == KindIdentifier {
 			values.Push(token)
 		} else if token.op == OpCloseParent {
 			for !ops.Empty() && ops.Top().op != OpOpenParent {

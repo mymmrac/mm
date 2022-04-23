@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/shopspring/decimal"
 )
@@ -13,6 +14,11 @@ const (
 	KindNumber     TokenKind = "number"     // `123`, `1.12`, `-12`, `1_2_3`
 	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
 )
+
+var constants = map[string]decimal.Decimal{
+	"Pi": decimal.NewFromFloat(math.Pi),
+	"e":  decimal.NewFromFloat(math.E),
+}
 
 type Operator int
 
@@ -117,26 +123,32 @@ func opPrecedence(op Operator) int {
 	}
 }
 
-func applyUnaryOp(v, op Token) (Token, bool) {
-	if v.kind != KindNumber {
-		return Token{
-			loc: Location{
-				start: op.loc.start,
-				end:   v.loc.end,
-			},
-		}, false
+func numberOrVariable(token Token, variables map[Token]decimal.Decimal) (decimal.Decimal, bool) {
+	switch token.kind {
+	case KindNumber:
+		return token.number, true
+	case KindIdentifier:
+		number, ok := variables[token]
+		return number, ok
+	default:
+		return decimal.Decimal{}, false
 	}
+}
 
-	one := decimal.NewFromInt(1)
+func applyUnaryOp(v, op Token, variables map[Token]decimal.Decimal) (Token, bool) {
+	number, ok := numberOrVariable(v, variables)
+	if !ok {
+		return v, false
+	}
 
 	var result decimal.Decimal
 	switch op.op {
 	case OpUnaryMinus:
-		result = v.number.Neg()
+		result = number.Neg()
 	case OpInc:
-		result = v.number.Add(one)
+		result = number.Add(one)
 	case OpDec:
-		result = v.number.Sub(one)
+		result = number.Sub(one)
 	default:
 		return Token{
 			loc: Location{
@@ -158,47 +170,48 @@ func applyUnaryOp(v, op Token) (Token, bool) {
 	}, true
 }
 
-func applyBinaryOp(v1, v2, op Token) (Token, bool) {
-	if v1.kind != KindNumber || v2.kind != KindNumber {
-		return Token{
-			loc: Location{
-				start: v1.loc.start,
-				end:   v2.loc.end,
-			},
-		}, false
+func applyBinaryOp(v1, v2, op Token, variables map[Token]decimal.Decimal) (Token, bool) {
+	number1, ok := numberOrVariable(v1, variables)
+	if !ok {
+		return v1, false
+	}
+
+	number2, ok := numberOrVariable(v2, variables)
+	if !ok {
+		return v2, false
 	}
 
 	var result decimal.Decimal
 	switch op.op {
 	case OpPlus:
-		result = v1.number.Add(v2.number)
+		result = number1.Add(number2)
 	case OpMinus:
-		result = v1.number.Sub(v2.number)
+		result = number1.Sub(number2)
 	case OpMultiply:
-		result = v1.number.Mul(v2.number)
+		result = number1.Mul(number2)
 	case OpDivide:
-		if v2.number.IsZero() {
+		if number2.IsZero() {
 			return v2, false
 		}
-		result = v1.number.Div(v2.number)
+		result = number1.Div(number2)
 	case OpPower:
-		if !v2.number.IsInteger() {
+		if !number2.IsInteger() {
 			return v2, false
 		}
-		result = v1.number.Pow(v2.number)
+		result = number1.Pow(number2)
 	case OpMod:
-		if !v1.number.IsInteger() {
+		if !number1.IsInteger() {
 			return v1, false
 		}
-		if !v2.number.IsInteger() {
+		if !number2.IsInteger() {
 			return v2, false
 		}
-		result = v1.number.Mod(v2.number)
+		result = number1.Mod(number2)
 	case OpRoot:
-		if !v2.number.IsInteger() {
+		if !number2.IsInteger() {
 			return v2, false
 		}
-		result = DecimalRoot(v1.number, v2.number)
+		result = DecimalRoot(number1, number2)
 	default:
 		return Token{
 			loc: Location{
