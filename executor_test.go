@@ -51,16 +51,25 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "add_multiple", expr: "1 + 10 + 100 + 1000", result: "1111", loc: nl(t)},
 
 		{name: "sub", expr: "123.321 - 321.123", result: "-197.802", loc: nl(t)},
-		{name: "sub_compact_ expr_1", expr: "1-2", result: "-1", loc: nl(t)},
-		{name: "sub_compact_ expr_2", expr: "1-(2)", result: "-1", loc: nl(t)},
-		{name: "sub_compact_ expr_3", expr: "(1)-2", result: "-1", loc: nl(t)},
+		{name: "sub_compact_expr", expr: "1-2", result: "-1", loc: nl(t)},
+		{name: "sub_compact_expr", expr: "1-(2)", result: "-1", loc: nl(t)},
+		{name: "sub_compact_expr", expr: "(1)-2", result: "-1", loc: nl(t)},
 
 		{name: "unary_minus", expr: "- 321.123", result: "-321.123", loc: nl(t)},
 
-		{name: "bug_unary_minus_1", expr: "1 + ( - 1 )", result: "0", loc: nl(t)},
-		{name: "bug_unary_minus_2", expr: "1 + ( - 2 )", result: "-1", loc: nl(t)},
+		{name: "bug_unary_minus", expr: "1 + ( - 1 )", result: "0", loc: nl(t)},
+		{name: "bug_unary_minus", expr: "1 + ( - 2 )", result: "-1", loc: nl(t)},
+		{name: "bug_unary_minus", expr: "- (1 + 1)", result: "-2", loc: nl(t)},
 
-		{name: "expression_1", expr: "9 @ (3+1) + 17 / (6 - 12)", result: "-1.101282525764456", loc: nl(t)},
+		{name: "expression", expr: "9 @ (3+1) + 17 / (6 - 12)", result: "-1.101282525764456", loc: nl(t)},
+
+		{name: "power", expr: "2 ^ 3", result: "8", loc: nl(t)},
+		{name: "power", expr: "2.1 ^ 3", result: "9.261", loc: nl(t)},
+		{name: "power", expr: "-2.1 ^ 3", result: "-9.261", loc: nl(t)},
+		{name: "power", expr: "2 ^ (-3)", result: "0.125", loc: nl(t)},
+
+		{name: "err_power", expr: "2 ^ -3", result: "", loc: l(t, 2, 3)},
+		{name: "err_power", expr: "-2.1 ^ 3.13", result: "", loc: l(t, 7, 11)},
 
 		//{name: "", expr: "", result: "", loc: nl(t)},
 	}
