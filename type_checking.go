@@ -122,8 +122,6 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 		i := ops.Pop()
 		op := tokens[i].op
 
-		e.debugger.Debug(values, " ", opsToText[op], " ", tokens[i].loc)
-
 		switch opsTypes[op] {
 		case TypeUnary:
 			if values < 1 {
@@ -148,8 +146,6 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 		} else if token.kind == KindNumber || token.kind == KindIdentifier {
 			values++
 		} else if token.op == OpCloseParent {
-			e.debugger.Debug(parentValues)
-
 			beforeParents := parentValues.Pop()
 			values -= beforeParents
 

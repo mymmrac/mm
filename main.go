@@ -143,6 +143,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input.SetValue(m.expressions[m.selectedExpr])
 			m.input.CursorEnd()
 		case key.Matches(msg, keys.NextExpr):
+			if key.Matches(msg, keys.UseResult) && len(m.results) != 0 && m.input.Value() == "" {
+				lastResult := m.results[len(m.results)-1]
+				m.input.SetValue(lastResult)
+
+				break
+			}
+
 			if m.selectedExpr >= 0 {
 				if m.expressions[m.selectedExpr] != m.input.Value() {
 					m.selectedExpr = historyDisabled
@@ -191,6 +198,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.liveError = false
 		}
 	}
+
+	m.debugger.Debug("Message ", msg)
 
 	return m, inputCmd
 }
