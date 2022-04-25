@@ -12,7 +12,7 @@ type TokenKind string
 
 const (
 	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
-	KindNumber     TokenKind = "number"     // `123`, `1.12`, `-12`, `1_2_3`
+	KindNumber     TokenKind = "number"     // `123`, `1.12`, `12`, `1_2_3`
 	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
 )
 
@@ -139,10 +139,8 @@ func opPrecedence(op Operator) int {
 		return 2
 	case OpPower, OpRoot:
 		return 3
-	case OpInc, OpDec, OpRound, OpFloor, OpCeil, OpAbs:
+	case OpInc, OpDec, OpUnaryMinus, OpRound, OpFloor, OpCeil, OpAbs:
 		return 4
-	case OpUnaryMinus:
-		return 5
 	default:
 		utils.Assert(false, "unreachable")
 		return 0

@@ -118,6 +118,64 @@ func (e *Executor) typeCheck(tokens []Token, variables map[Token]decimal.Decimal
 	// Type check operators arguments
 	values := 0
 	ops := utils.Stack[int]{}
+	parentValues := utils.Stack[int]{}
+
+	updateTypes := func() {
+		i := ops.Pop()
+		op := tokens[i].op
+
+		switch opsTypes[op] {
+		case TypeUnary:
+		case TypeBinary:
+			// Convert minus into unary minus
+			if op == OpMinus && values == 1 {
+				tokens[i].op = OpUnaryMinus
+				break
+			}
+
+			values--
+		default:
+			utils.Assert(false, "unreachable")
+		}
+	}
+
+	for i, token := range tokens {
+		if token.op == OpOpenParent {
+			ops.Push(i)
+			parentValues.Push(values)
+		} else if token.kind == KindNumber || token.kind == KindIdentifier {
+			values++
+		} else if token.op == OpCloseParent {
+			beforeParents := parentValues.Pop()
+			values -= beforeParents
+
+			for !ops.Empty() && tokens[ops.Top()].op != OpOpenParent {
+				updateTypes()
+			}
+
+			values = beforeParents + 1
+
+			if !ops.Empty() {
+				ops.Pop()
+			}
+		} else {
+			for !ops.Empty() && compareOpPrecedence(tokens[ops.Top()], token) {
+				updateTypes()
+			}
+
+			ops.Push(i)
+		}
+	}
+
+	for !ops.Empty() {
+		updateTypes()
+	}
+
+	e.debugger.Debug("Type checked ", tokens)
+
+	values = 0
+	ops = utils.Stack[int]{}
+	parentValues = utils.Stack[int]{}
 
 	validate := func() bool {
 		i := ops.Pop()
@@ -132,23 +190,15 @@ func (e *Executor) typeCheck(tokens []Token, variables map[Token]decimal.Decimal
 			}
 		case TypeBinary:
 			if values < 2 {
-				// Convert minus into unary minus
-				if op == OpMinus && values == 1 {
-					tokens[i].op = OpUnaryMinus
-					return true
-				}
-
 				return false
 			}
-			values -= 1
+			values--
 		default:
 			utils.Assert(false, "unreachable")
 		}
 
 		return true
 	}
-
-	parentValues := utils.Stack[int]{}
 
 	for i, token := range tokens {
 		if token.op == OpOpenParent {
