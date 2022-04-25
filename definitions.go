@@ -240,6 +240,9 @@ func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 		}
 		result = number1.Mod(number2)
 	case OpRoot:
+		if number1.IsNegative() {
+			return v1, false
+		}
 		if !number2.IsInteger() {
 			return v2, false
 		}
