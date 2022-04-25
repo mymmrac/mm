@@ -41,6 +41,8 @@ mm
 
 ## :zap: Operators
 
+### Binary
+
 - `+` Addition
 - `-` Subtraction
 - `*` Multiplication
@@ -48,7 +50,10 @@ mm
 - `^` Power (only integer powers)
 - `@` Nth Root (only integer roots)
 - `%` Mod (only integers)
-- `-` Unary Minus
+
+### Unary
+
+- `-` Minus
 - `++` Increment
 - `--` Decrement
 - `!abs` Abs
