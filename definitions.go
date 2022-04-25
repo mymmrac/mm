@@ -147,7 +147,7 @@ func opPrecedence(op Operator) int {
 	}
 }
 
-func numberOrVariable(token Token, variables map[Token]decimal.Decimal) (decimal.Decimal, bool) {
+func numberOrVariable(token Token, variables Vars) (decimal.Decimal, bool) {
 	switch token.kind {
 	case KindNumber:
 		return token.number, true
@@ -159,7 +159,7 @@ func numberOrVariable(token Token, variables map[Token]decimal.Decimal) (decimal
 	}
 }
 
-func applyUnaryOp(v, op Token, variables map[Token]decimal.Decimal) (Token, bool) {
+func applyUnaryOp(v, op Token, variables Vars) (Token, bool) {
 	number, ok := numberOrVariable(v, variables)
 	if !ok {
 		return v, false
@@ -202,7 +202,7 @@ func applyUnaryOp(v, op Token, variables map[Token]decimal.Decimal) (Token, bool
 	}, true
 }
 
-func applyBinaryOp(v1, v2, op Token, variables map[Token]decimal.Decimal) (Token, bool) {
+func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 	number1, ok := numberOrVariable(v1, variables)
 	if !ok {
 		return v1, false
