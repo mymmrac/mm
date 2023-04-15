@@ -1,4 +1,4 @@
-package main
+package executor
 
 import (
 	"fmt"
@@ -185,8 +185,8 @@ func applyUnaryOp(v, op Token, variables Vars) (Token, bool) {
 	default:
 		return Token{
 			loc: Location{
-				start: op.loc.start,
-				end:   v.loc.end,
+				Start: op.loc.Start,
+				End:   v.loc.End,
 			},
 		}, false
 	}
@@ -195,8 +195,8 @@ func applyUnaryOp(v, op Token, variables Vars) (Token, bool) {
 		kind: KindNumber,
 		text: fmt.Sprintf("%s %s", opsToSymbolText[op.op], v.text),
 		loc: Location{
-			start: op.loc.start,
-			end:   v.loc.end,
+			Start: op.loc.Start,
+			End:   v.loc.End,
 		},
 		number: result,
 		op:     0,
@@ -251,8 +251,8 @@ func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 	default:
 		return Token{
 			loc: Location{
-				start: v1.loc.start,
-				end:   v2.loc.end,
+				Start: v1.loc.Start,
+				End:   v2.loc.End,
 			},
 		}, false
 	}
@@ -261,8 +261,8 @@ func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 		kind: KindNumber,
 		text: fmt.Sprintf("%s %s %s", v1.text, opsToSymbolText[op.op], v2.text),
 		loc: Location{
-			start: v1.loc.start,
-			end:   v2.loc.end,
+			Start: v1.loc.Start,
+			End:   v2.loc.End,
 		},
 		number: result,
 		op:     0,

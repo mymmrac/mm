@@ -1,24 +1,26 @@
-package main
+package executor
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mymmrac/mm/debugger"
 )
 
 func l(t *testing.T, s, e int) Location {
 	t.Helper()
 	return Location{
-		start: s,
-		end:   e,
+		Start: s,
+		End:   e,
 	}
 }
 
 func nl(t *testing.T) Location {
 	t.Helper()
 	return Location{
-		start: -1,
-		end:   -1,
+		Start: -1,
+		End:   -1,
 	}
 }
 
@@ -92,18 +94,18 @@ func TestExecutor_Execute(t *testing.T) {
 		// {name: "", expr: "", result: "", loc: nl(t)},
 	}
 
-	d := &Debugger{}
+	d := &debugger.Debugger{}
 	e := NewExecutor(d)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := e.Execute(tt.expr)
 			assert.Equal(t, tt.result, result)
-			if tt.loc.start == -1 && tt.loc.end == -1 {
+			if tt.loc.Start == -1 && tt.loc.End == -1 {
 				assert.Nil(t, err)
 			} else {
 				assert.NotNil(t, err)
-				assert.True(t, len(err.text) > 0)
-				assert.Equal(t, tt.loc, err.loc)
+				assert.True(t, len(err.Text) > 0)
+				assert.Equal(t, tt.loc, err.Loc)
 			}
 		})
 	}

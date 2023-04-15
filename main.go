@@ -8,6 +8,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
+	"github.com/mymmrac/mm/debugger"
+	"github.com/mymmrac/mm/executor"
+	"github.com/mymmrac/mm/repl"
 	"github.com/mymmrac/mm/utils"
 )
 
@@ -24,14 +27,14 @@ func main() {
 			verbose, err := cmd.PersistentFlags().GetBool(verboseFlag)
 			utils.Assert(err == nil, verboseFlag, "flag not found")
 
-			debugger := &Debugger{}
-			debugger.SetEnabled(verbose)
+			debug := &debugger.Debugger{}
+			debug.SetEnabled(verbose)
 
 			if len(args) == 0 {
-				runRepl(debugger)
+				runRepl(debug)
 			} else {
 				// TODO: Support piping
-				runImmediate(strings.Join(args, " "), debugger)
+				runImmediate(strings.Join(args, " "), debug)
 			}
 		},
 	}
@@ -45,10 +48,10 @@ func main() {
 	}
 }
 
-func runImmediate(expr string, debugger *Debugger) {
-	executor := NewExecutor(debugger)
+func runImmediate(expr string, debugger *debugger.Debugger) {
+	exec := executor.NewExecutor(debugger)
 
-	result, err := executor.Execute(expr)
+	result, err := exec.Execute(expr)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
@@ -61,8 +64,8 @@ func runImmediate(expr string, debugger *Debugger) {
 	fmt.Println(result)
 }
 
-func runRepl(debugger *Debugger) {
-	if _, err := tea.NewProgram(newModel(debugger)).Run(); err != nil {
+func runRepl(debugger *debugger.Debugger) {
+	if _, err := tea.NewProgram(repl.NewModel(debugger)).Run(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "FATAL: %s\n", err)
 		os.Exit(1)
 	}

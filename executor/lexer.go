@@ -1,4 +1,4 @@
-package main
+package executor
 
 import (
 	"fmt"
@@ -47,12 +47,12 @@ func init() {
 }
 
 type Location struct {
-	start int
-	end   int
+	Start int
+	End   int
 }
 
 func (l Location) Size() int {
-	return l.end - l.start
+	return l.End - l.Start
 }
 
 type Token struct {
@@ -64,7 +64,7 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("{%s}:[%d-%d] `%s` %s %q", t.kind, t.loc.start, t.loc.end, t.text, t.number, opsToText[t.op])
+	return fmt.Sprintf("{%s}:[%d-%d] `%s` %s %q", t.kind, t.loc.Start, t.loc.End, t.text, t.number, opsToText[t.op])
 }
 
 type Lexer struct{}
@@ -112,14 +112,14 @@ func (l *Lexer) Tokenize(text string) ([]Token, *ExprError) {
 			loc = unknownPattern.FindStringIndex(text)
 
 			if len(loc) == 0 {
-				return nil, NewExprErr("invalid expression", Location{start: 0, end: len(text) + offset})
+				return nil, NewExprErr("invalid expression", Location{Start: 0, End: len(text) + offset})
 			}
 
 			return nil, NewExprErr(
 				fmt.Sprintf("unknown token: `%s`", text[loc[0]:loc[1]]),
 				Location{
-					start: loc[0] + offset,
-					end:   loc[1] + offset,
+					Start: loc[0] + offset,
+					End:   loc[1] + offset,
 				},
 			)
 		}
@@ -130,8 +130,8 @@ func (l *Lexer) Tokenize(text string) ([]Token, *ExprError) {
 			kind: tKind,
 			text: tValue,
 			loc: Location{
-				start: loc[0] + offset,
-				end:   loc[1] + offset,
+				Start: loc[0] + offset,
+				End:   loc[1] + offset,
 			},
 		})
 

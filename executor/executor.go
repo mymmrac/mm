@@ -1,38 +1,39 @@
-package main
+package executor
 
 import (
 	"fmt"
 
 	"github.com/shopspring/decimal"
 
+	"github.com/mymmrac/mm/debugger"
 	"github.com/mymmrac/mm/utils"
 )
 
 type ExprError struct {
-	text string
-	loc  Location
+	Text string
+	Loc  Location
 }
 
 func NewExprErr(text string, loc Location) *ExprError {
 	return &ExprError{
-		text: text,
-		loc:  loc,
+		Text: text,
+		Loc:  loc,
 	}
 }
 
 func (e *ExprError) Error() string {
-	if e.loc.Size() == 1 {
-		return fmt.Sprintf("expression at [%d]: %s", e.loc.start+1, e.text)
+	if e.Loc.Size() == 1 {
+		return fmt.Sprintf("expression at [%d]: %s", e.Loc.Start+1, e.Text)
 	}
-	return fmt.Sprintf("expression in rage [%d, %d]: %s", e.loc.start+1, e.loc.end, e.text)
+	return fmt.Sprintf("expression in rage [%d, %d]: %s", e.Loc.Start+1, e.Loc.End, e.Text)
 }
 
 type Executor struct {
 	lexer    *Lexer
-	debugger *Debugger
+	debugger *debugger.Debugger
 }
 
-func NewExecutor(debugger *Debugger) *Executor {
+func NewExecutor(debugger *debugger.Debugger) *Executor {
 	return &Executor{
 		lexer:    NewLexer(),
 		debugger: debugger,
@@ -189,5 +190,5 @@ func compareOpPrecedence(op1, op2 Token) bool {
 	if opPrecedence(op1.op) != opPrecedence(op2.op) {
 		return opPrecedence(op1.op) > opPrecedence(op2.op)
 	}
-	return op1.loc.start > op2.loc.start
+	return op1.loc.Start > op2.loc.Start
 }

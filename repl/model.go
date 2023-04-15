@@ -1,14 +1,17 @@
-package main
+package repl
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/mymmrac/mm/debugger"
+	"github.com/mymmrac/mm/executor"
 	"github.com/mymmrac/mm/utils"
 )
 
@@ -17,45 +20,45 @@ const (
 	historyDisabled = -2
 )
 
-type model struct {
+type Model struct {
 	input textinput.Model
 
 	liveResult   string
 	liveError    bool
-	liveErrorLoc Location
+	liveErrorLoc executor.Location
 
 	selectedExpr int
 	expressions  []string
 	results      []string
 
-	executor  *Executor
-	exprError *ExprError
+	executor  *executor.Executor
+	exprError *executor.ExprError
 
-	debugger *Debugger
+	debugger *debugger.Debugger
 
 	width, height int
 }
 
-func newModel(debugger *Debugger) *model {
+func NewModel(debugger *debugger.Debugger) *Model {
 	input := textinput.New()
 	input.Placeholder = "..."
 	input.Prompt = "> "
 	input.Focus()
 
-	return &model{
+	return &Model{
 		input:        input,
 		expressions:  make([]string, 0),
 		selectedExpr: historyNone,
-		executor:     NewExecutor(debugger),
+		executor:     executor.NewExecutor(debugger),
 		debugger:     debugger,
 	}
 }
 
-func (m *model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	keyUpdate := false
 
 	switch msg := msg.(type) {
@@ -84,7 +87,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			result, err := m.executor.Execute(expr)
 			if err != nil {
 				m.exprError = err
-				m.input.SetCursor(err.loc.end)
+				m.input.SetCursor(err.Loc.End)
 				m.selectedExpr = historyDisabled
 				break
 			}
@@ -163,14 +166,16 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if err != nil {
 			m.liveResult = ""
 			m.liveError = true
-			m.liveErrorLoc = err.loc
+			m.liveErrorLoc = err.Loc
 		} else {
 			m.liveResult = liveResult
 			m.liveError = false
 		}
 	}
 
-	m.debugger.Debug("Message ", msg)
+	if _, ok := msg.(cursor.BlinkMsg); !ok {
+		m.debugger.Debug("Message", fmt.Sprintf(" %#v", msg))
+	}
 
 	return m, inputCmd
 }
@@ -180,7 +185,7 @@ var (
 	mutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 )
 
-func (m *model) View() string {
+func (m *Model) View() string {
 	s := strings.Builder{}
 
 	s.WriteString("\n")
@@ -196,12 +201,12 @@ func (m *model) View() string {
 	if m.liveError || m.exprError != nil {
 		loc := m.liveErrorLoc
 		if m.exprError != nil {
-			loc = m.exprError.loc
+			loc = m.exprError.Loc
 		}
 
 		s.WriteString(fmt.Sprintf(
 			"\n%s%s\n",
-			strings.Repeat(" ", loc.start+len(m.input.Prompt)),
+			strings.Repeat(" ", loc.Start+len(m.input.Prompt)),
 			errorStyle.Render(strings.Repeat("^", loc.Size())),
 		))
 	} else if m.liveResult != "" {
@@ -209,7 +214,7 @@ func (m *model) View() string {
 	}
 
 	if m.exprError != nil {
-		s.WriteString(utils.Wrap("Error: "+m.exprError.text, m.width))
+		s.WriteString(utils.Wrap("Error: "+m.exprError.Text, m.width))
 	}
 
 	if m.debugger.Enabled() {
