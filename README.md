@@ -3,7 +3,7 @@
 Simple CLI math expression evaluator.
 
 Order agnostic expression evaluator (order of operations determined only by order of operators and not
-operands itself) meaning that `++ 1` and `1 ++` essentially the same expression. 
+operands itself) meaning that `++ 1` and `1 ++` essentially the same expression.
 It also supports constants like `Pi` and other.
 
 **mm** uses repl to interact with user with live results and error highlighting.

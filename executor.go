@@ -20,6 +20,13 @@ func NewExprErr(text string, loc Location) *ExprError {
 	}
 }
 
+func (e *ExprError) Error() string {
+	if e.loc.Size() == 1 {
+		return fmt.Sprintf("expression at [%d]: %s", e.loc.start+1, e.text)
+	}
+	return fmt.Sprintf("expression in rage [%d, %d]: %s", e.loc.start+1, e.loc.end, e.text)
+}
+
 type Executor struct {
 	lexer    *Lexer
 	debugger *Debugger

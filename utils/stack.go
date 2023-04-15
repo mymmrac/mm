@@ -28,6 +28,6 @@ func (s *Stack[T]) Size() int {
 	return len(s.values)
 }
 
-func (s Stack[T]) String() string {
+func (s *Stack[T]) String() string {
 	return fmt.Sprint(s.values)
 }

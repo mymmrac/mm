@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/mymmrac/mm/utils"
 	"github.com/shopspring/decimal"
+
+	"github.com/mymmrac/mm/utils"
 )
 
 type TokenKind string
