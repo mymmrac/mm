@@ -2,11 +2,7 @@
 
 Simple CLI math expression evaluator.
 
-Order agnostic expression evaluator (order of operations determined only by order of operators and not
-operands itself) meaning that `++ 1` and `1 ++` essentially the same expression.
-It also supports constants like `Pi` and other.
-
-**mm** uses repl to interact with user with live results and error highlighting.
+**mm** uses repl to interact with user with live results and error highlighting, but immediate mode is also supported.
 
 ## :jigsaw: Get Started
 
@@ -35,7 +31,7 @@ mm
 - `Enter` - evaluate expression
 - `Up`, `Tab` - previews executed expression
 - `Down`, `Shift+Tab` - next executed expression
-- `Shift+Tab` - use result of last expression as input (only if input empty)
+- `Shift+Tab` - use the result of last expression as input (only if input empty)
 - `Esc` - exit if input is empty, or clean input
 - `Crtl+c` - force quit
 

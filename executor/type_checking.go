@@ -139,11 +139,25 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 		return true
 	}
 
+	isValue := func(kind TokenKind) bool {
+		return kind == KindNumber || kind == KindIdentifier
+	}
+
 	for i, token := range tokens {
 		if token.op == OpOpenParent {
+			// Check order of values
+			if i > 0 && isValue(tokens[i-1].kind) {
+				return NewExprErr("no operator found for `"+token.text+"`", token.loc)
+			}
+
 			ops.Push(i)
 			parentValues.Push(values)
-		} else if token.kind == KindNumber || token.kind == KindIdentifier {
+		} else if isValue(token.kind) {
+			// Check order of values
+			if i > 0 && isValue(tokens[i-1].kind) {
+				return NewExprErr("no operator found for `"+token.text+"`", token.loc)
+			}
+
 			values++
 		} else if token.op == OpCloseParent {
 			beforeParents := parentValues.Pop()

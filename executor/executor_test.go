@@ -86,8 +86,10 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "parents", expr: "(-1)", result: "-1", loc: nl(t)},
 		{name: "parents", expr: "(-1) + 2", result: "1", loc: nl(t)},
 		{name: "parents", expr: "- (-1) + 2", result: "3", loc: nl(t)},
-		{name: "parents", expr: "(1 + (- 2 3) - 4)", result: "-4", loc: nl(t)},
-		{name: "parents", expr: "(1 + (- 2 (3 + 5)) - (4 - 2))", result: "-7", loc: nl(t)},
+		{name: "parents", expr: "(1 + (2 - 3) - 4)", result: "-4", loc: nl(t)},
+		{name: "parents", expr: "(1 + (- 2 3) - 4)", result: "", loc: l(t, 10, 11)},
+		{name: "parents", expr: "(1 + (2 - (3 + 5)) - (4 - 2))", result: "-7", loc: nl(t)},
+		{name: "parents", expr: "(1 + (- 2 (3 + 5)) - (4 - 2))", result: "", loc: l(t, 10, 11)},
 
 		{name: "root_bug", expr: "3 @ 2 -", result: "0.5773502691896258", loc: nl(t)},
 
