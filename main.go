@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -30,11 +31,17 @@ func main() {
 			debug := &debugger.Debugger{}
 			debug.SetEnabled(verbose)
 
-			if len(args) == 0 {
-				runRepl(debug)
-			} else {
-				// TODO: Support piping
+			fi, err := os.Stdin.Stat()
+			isPiped := err == nil && (fi.Mode()&os.ModeNamedPipe) != 0
+
+			if isPiped {
+				expr, readErr := io.ReadAll(os.Stdin)
+				utils.Assert(readErr == nil, "reading from stdin:", readErr)
+				runImmediate(string(expr), debug)
+			} else if len(args) != 0 {
 				runImmediate(strings.Join(args, " "), debug)
+			} else {
+				runRepl(debug)
 			}
 		},
 	}

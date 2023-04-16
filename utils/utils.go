@@ -23,7 +23,7 @@ func ForeachSlice[T any](slice []T, f func(T)) {
 }
 
 func TrimWhitespacesAndCount(text string) (string, int) {
-	newText := strings.TrimLeft(text, " \t")
+	newText := strings.TrimLeft(text, " \t\n")
 	return newText, len(text) - len(newText)
 }
 
