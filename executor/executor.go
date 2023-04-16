@@ -3,30 +3,9 @@ package executor
 import (
 	"fmt"
 
-	"github.com/shopspring/decimal"
-
 	"github.com/mymmrac/mm/debugger"
 	"github.com/mymmrac/mm/utils"
 )
-
-type ExprError struct {
-	Text string
-	Loc  Location
-}
-
-func NewExprErr(text string, loc Location) *ExprError {
-	return &ExprError{
-		Text: text,
-		Loc:  loc,
-	}
-}
-
-func (e *ExprError) Error() string {
-	if e.Loc.Size() == 1 {
-		return fmt.Sprintf("expression at [%d]: %s", e.Loc.Start+1, e.Text)
-	}
-	return fmt.Sprintf("expression in rage [%d, %d]: %s", e.Loc.Start+1, e.Loc.End, e.Text)
-}
 
 type Executor struct {
 	lexer    *Lexer
@@ -39,8 +18,6 @@ func NewExecutor(debugger *debugger.Debugger) *Executor {
 		debugger: debugger,
 	}
 }
-
-type Vars map[Token]decimal.Decimal
 
 func (e *Executor) Execute(expr string) (string, *ExprError) {
 	e.debugger.Clean()
@@ -89,9 +66,7 @@ func (e *Executor) typeCheck(tokens []Token, variables Vars) *ExprError {
 
 	e.debugger.Debug("Identified ", tokens)
 
-	if err := e.updateTokens(tokens); err != nil {
-		return err
-	}
+	e.updateTokens(tokens)
 
 	e.debugger.Debug("Type checked ", tokens)
 
@@ -108,23 +83,23 @@ func (e *Executor) evaluate(tokens []Token, variables Vars) (Token, *ExprError) 
 	eval := func() *ExprError {
 		opToken := ops.Pop()
 
-		switch opsTypes[opToken.op] {
+		switch opTypes[opToken.op] {
 		case TypeUnary:
 			if values.Size() < 1 {
-				return NewExprErr("not enough args for `"+opsToText[opToken.op]+"` operation", opToken.loc)
+				return NewExprErr("not enough args for `"+opToText[opToken.op]+"` operation", opToken.loc)
 			}
 
 			v := values.Pop()
 
 			res, ok := applyUnaryOp(v, opToken, variables)
 			if !ok {
-				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
+				return NewExprErr("can't apply "+opToText[opToken.op]+" operation", res.loc)
 			}
 
 			values.Push(res)
 		case TypeBinary:
 			if values.Size() < 2 {
-				return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
+				return NewExprErr("not enough args for "+opToText[opToken.op]+" operation", opToken.loc)
 			}
 
 			v2 := values.Pop()
@@ -132,7 +107,7 @@ func (e *Executor) evaluate(tokens []Token, variables Vars) (Token, *ExprError) 
 
 			res, ok := applyBinaryOp(v1, v2, opToken, variables)
 			if !ok {
-				return NewExprErr("can't apply "+opsToText[opToken.op]+" operation", res.loc)
+				return NewExprErr("can't apply "+opToText[opToken.op]+" operation", res.loc)
 			}
 
 			values.Push(res)

@@ -5,16 +5,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/shopspring/decimal"
-
 	"github.com/mymmrac/mm/utils"
 )
 
 func init() {
-	opsText := utils.Keys(textToOps)
+	opText := utils.Keys(textToOp)
 
 	var singleCharOps, multiCharOps []string
-	utils.ForeachSlice(opsText, func(op string) {
+	utils.ForeachSlice(opText, func(op string) {
 		if len(op) == 1 {
 			singleCharOps = append(singleCharOps, op)
 		} else {
@@ -43,28 +41,8 @@ func init() {
 		opPattern = fmt.Sprintf(`^[%s]`,
 			strings.Join(utils.MapSlice(singleCharOps, escapeAll), ""))
 	}
+
 	operatorPattern = regexp.MustCompile(opPattern)
-}
-
-type Location struct {
-	Start int
-	End   int
-}
-
-func (l Location) Size() int {
-	return l.End - l.Start
-}
-
-type Token struct {
-	kind   TokenKind
-	text   string
-	loc    Location
-	number decimal.Decimal
-	op     Operator
-}
-
-func (t Token) String() string {
-	return fmt.Sprintf("{%s}:[%d-%d] `%s` %s %q", t.kind, t.loc.Start, t.loc.End, t.text, t.number, opsToText[t.op])
 }
 
 type Lexer struct{}
@@ -74,10 +52,11 @@ func NewLexer() *Lexer {
 }
 
 var (
-	identPattern    = regexp.MustCompile(`^[a-zA-Z]\w*`)
-	numberPattern   = regexp.MustCompile(`^[\d_]+(:?\.[\d_]+)?`)
-	operatorPattern *regexp.Regexp
+	identifierPattern = regexp.MustCompile(`^[a-zA-Z]\w*`)
+	numberPattern     = regexp.MustCompile(`^[\d_]+(:?\.[\d_]+)?`) // TODO: Fix cases like _1
+	operatorPattern   *regexp.Regexp
 
+	// TODO: Check if valid
 	unknownPattern = regexp.MustCompile(`^[^ \t]+`)
 )
 
@@ -95,12 +74,12 @@ func (l *Lexer) Tokenize(text string) ([]Token, *ExprError) {
 	offset += trimmed
 
 	for text != "" {
-		loc = identPattern.FindStringIndex(text)
-		tKind = KindIdentifier
+		loc = numberPattern.FindStringIndex(text)
+		tKind = KindNumber
 
 		if len(loc) == 0 {
-			loc = numberPattern.FindStringIndex(text)
-			tKind = KindNumber
+			loc = identifierPattern.FindStringIndex(text)
+			tKind = KindIdentifier
 		}
 
 		if len(loc) == 0 {
@@ -112,6 +91,7 @@ func (l *Lexer) Tokenize(text string) ([]Token, *ExprError) {
 			loc = unknownPattern.FindStringIndex(text)
 
 			if len(loc) == 0 {
+				// TODO: Check if loc is correct
 				return nil, NewExprErr("invalid expression", Location{Start: 0, End: len(text) + offset})
 			}
 

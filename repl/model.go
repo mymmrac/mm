@@ -214,7 +214,7 @@ func (m *Model) View() string {
 	}
 
 	if m.exprError != nil {
-		s.WriteString(utils.Wrap("Error: "+m.exprError.Text, m.width))
+		s.WriteString(utils.Wrap("Error: "+m.exprError.Message, m.width))
 	}
 
 	if m.debugger.Enabled() {

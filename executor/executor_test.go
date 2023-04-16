@@ -104,7 +104,7 @@ func TestExecutor_Execute(t *testing.T) {
 				assert.Nil(t, err)
 			} else {
 				assert.NotNil(t, err)
-				assert.True(t, len(err.Text) > 0)
+				assert.True(t, len(err.Message) > 0)
 				assert.Equal(t, tt.loc, err.Loc)
 			}
 		})

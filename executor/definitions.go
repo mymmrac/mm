@@ -9,14 +9,6 @@ import (
 	"github.com/mymmrac/mm/utils"
 )
 
-type TokenKind string
-
-const (
-	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
-	KindNumber     TokenKind = "number"     // `123`, `1.12`, `12`, `1_2_3`
-	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
-)
-
 var constants = map[string]decimal.Decimal{
 	"Pi": decimal.NewFromFloat(math.Pi),
 	"e":  decimal.NewFromFloat(math.E),
@@ -44,7 +36,7 @@ const (
 	OpAbs
 )
 
-var textToOps = map[string]Operator{
+var textToOp = map[string]Operator{
 	"(":      OpOpenParent,
 	")":      OpCloseParent,
 	"+":      OpPlus,
@@ -62,7 +54,7 @@ var textToOps = map[string]Operator{
 	"!abs":   OpAbs,
 }
 
-var opsToSymbolText = map[Operator]string{
+var opToSymbolText = map[Operator]string{
 	OpNoOp: "no-op",
 
 	OpOpenParent:  "(",
@@ -83,7 +75,7 @@ var opsToSymbolText = map[Operator]string{
 	OpAbs:         "!abs",
 }
 
-var opsToText = map[Operator]string{
+var opToText = map[Operator]string{
 	OpNoOp:        "no-op",
 	OpOpenParent:  "open parent",
 	OpCloseParent: "close parent",
@@ -111,7 +103,7 @@ const (
 	TypeBinary OpType = "binary"
 )
 
-var opsTypes = map[Operator]OpType{
+var opTypes = map[Operator]OpType{
 	OpOpenParent:  TypeNoOp,
 	OpCloseParent: TypeNoOp,
 	OpPlus:        TypeBinary,
@@ -193,7 +185,7 @@ func applyUnaryOp(v, op Token, variables Vars) (Token, bool) {
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s", opsToSymbolText[op.op], v.text),
+		text: fmt.Sprintf("%s %s", opToSymbolText[op.op], v.text),
 		loc: Location{
 			Start: op.loc.Start,
 			End:   v.loc.End,
@@ -259,7 +251,7 @@ func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 
 	return Token{
 		kind: KindNumber,
-		text: fmt.Sprintf("%s %s %s", v1.text, opsToSymbolText[op.op], v2.text),
+		text: fmt.Sprintf("%s %s %s", v1.text, opToSymbolText[op.op], v2.text),
 		loc: Location{
 			Start: v1.loc.Start,
 			End:   v2.loc.End,

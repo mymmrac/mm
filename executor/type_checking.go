@@ -27,7 +27,7 @@ func (e *Executor) identifyTokens(tokens []Token, variables Vars) *ExprError {
 			}
 			tokens[i].number = decimal.NewFromFloat(n)
 		case KindOperator:
-			op, ok := textToOps[token.text]
+			op, ok := textToOp[token.text]
 			if !ok {
 				return NewExprErr("unknown operator: "+token.text, token.loc)
 			}
@@ -55,7 +55,7 @@ func (e *Executor) identifyTokens(tokens []Token, variables Vars) *ExprError {
 	return nil
 }
 
-func (e *Executor) updateTokens(tokens []Token) *ExprError {
+func (e *Executor) updateTokens(tokens []Token) {
 	values := 0
 	var parentValues, ops utils.Stack[int]
 
@@ -64,8 +64,9 @@ func (e *Executor) updateTokens(tokens []Token) *ExprError {
 		i := ops.Pop()
 		op := tokens[i].op
 
-		switch opsTypes[op] {
+		switch opTypes[op] {
 		case TypeUnary:
+			// Do nothing
 		case TypeBinary:
 			// Convert minus into unary minus
 			if op == OpMinus && values == 1 {
@@ -110,20 +111,18 @@ func (e *Executor) updateTokens(tokens []Token) *ExprError {
 	for !ops.Empty() {
 		updateTypes()
 	}
-
-	return nil
 }
 
 func (e *Executor) validateTokens(tokens []Token) *ExprError {
 	values := 0
 	var parentValues, ops utils.Stack[int]
 
-	// Type check operators arguments
+	// Type check operator's arguments
 	validate := func() bool {
 		i := ops.Pop()
 		op := tokens[i].op
 
-		switch opsTypes[op] {
+		switch opTypes[op] {
 		case TypeUnary:
 			if values < 1 {
 				return false
@@ -153,7 +152,7 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 			for !ops.Empty() && tokens[ops.Top()].op != OpOpenParent {
 				opToken := tokens[ops.Top()]
 				if ok := validate(); !ok {
-					return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
+					return NewExprErr("not enough args for "+opToText[opToken.op]+" operation", opToken.loc)
 				}
 			}
 
@@ -166,7 +165,7 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 			for !ops.Empty() && compareOpPrecedence(tokens[ops.Top()], token) {
 				opToken := tokens[ops.Top()]
 				if ok := validate(); !ok {
-					return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
+					return NewExprErr("not enough args for "+opToText[opToken.op]+" operation", opToken.loc)
 				}
 			}
 
@@ -177,7 +176,7 @@ func (e *Executor) validateTokens(tokens []Token) *ExprError {
 	for !ops.Empty() {
 		opToken := tokens[ops.Top()]
 		if ok := validate(); !ok {
-			return NewExprErr("not enough args for "+opsToText[opToken.op]+" operation", opToken.loc)
+			return NewExprErr("not enough args for "+opToText[opToken.op]+" operation", opToken.loc)
 		}
 	}
 
