@@ -58,10 +58,10 @@ func (m *Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(rawMsg tea.Msg) (tea.Model, tea.Cmd) {
 	keyUpdate := false
 
-	switch msg := msg.(type) {
+	switch msg := rawMsg.(type) {
 	case tea.KeyMsg:
 		if msg.Type != tea.KeyLeft && msg.Type != tea.KeyRight {
 			m.exprError = nil
@@ -159,7 +159,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var inputCmd tea.Cmd
-	m.input, inputCmd = m.input.Update(msg)
+	m.input, inputCmd = m.input.Update(rawMsg)
 
 	if keyUpdate {
 		liveResult, err := m.executor.Execute(m.input.Value())
@@ -173,8 +173,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if _, ok := msg.(cursor.BlinkMsg); !ok {
-		m.debugger.Debug("Message", fmt.Sprintf(" %#v", msg))
+	if _, ok := rawMsg.(cursor.BlinkMsg); !ok {
+		m.debugger.Debug("Message", fmt.Sprintf(" %#v", rawMsg))
 	}
 
 	return m, inputCmd

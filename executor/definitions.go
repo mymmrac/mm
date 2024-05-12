@@ -9,6 +9,8 @@ import (
 	"github.com/mymmrac/mm/utils"
 )
 
+var one = decimal.New(1, 0)
+
 var constants = map[string]decimal.Decimal{
 	"Pi": decimal.NewFromFloat(math.Pi),
 	"e":  decimal.NewFromFloat(math.E),
@@ -219,27 +221,41 @@ func applyBinaryOp(v1, v2, op Token, variables Vars) (Token, bool) {
 			return v2, false
 		}
 		result = number1.Div(number2)
-	case OpPower:
-		if !number2.IsInteger() {
-			return v2, false
-		}
-		result = number1.Pow(number2)
 	case OpMod:
-		if !number1.IsInteger() {
-			return v1, false
-		}
-		if !number2.IsInteger() {
-			return v2, false
-		}
 		result = number1.Mod(number2)
-	case OpRoot:
-		if number1.IsNegative() {
+	case OpPower:
+		switch {
+		// 0 ** 0 => undefined value
+		case number1.IsZero() && number2.IsZero():
 			return v1, false
-		}
-		if !number2.IsInteger() {
+		// 0 ** y, where y < 0 => infinity
+		case number1.IsZero() && number2.IsNegative():
+			return v2, false
+		// x ** y, where x < 0 and y is non-integer decimal => imaginary value
+		case number1.IsNegative() && !number2.IsInteger():
 			return v2, false
 		}
-		result = DecimalRoot(number1, number2)
+
+		result = number1.Pow(number2)
+	case OpRoot:
+		if number2.IsZero() {
+			return v2, false
+		}
+		number2 = one.Div(number2)
+
+		switch {
+		// 0 ** 0 => undefined value
+		case number1.IsZero() && number2.IsZero():
+			return v1, false
+		// 0 ** y, where y < 0 => infinity
+		case number1.IsZero() && number2.IsNegative():
+			return v2, false
+		// x ** y, where x < 0 and y is non-integer decimal => imaginary value
+		case number1.IsNegative() && !number2.IsInteger():
+			return v2, false
+		}
+
+		result = number1.Pow(number2)
 	default:
 		return Token{
 			loc: Location{
