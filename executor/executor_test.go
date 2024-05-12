@@ -69,7 +69,7 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "unary_minus", expr: "- 1 ++", result: "-2", loc: nl(t)},
 		{name: "unary_minus", expr: "- - 1", result: "1", loc: nl(t)},
 
-		{name: "expression", expr: "9 @ (3+1) + 17 / (6 - 12)", result: "-1.101282525764456", loc: nl(t)},
+		{name: "expression", expr: "9 @ (3+1) + 17 / (6 - 12)", result: "-1.10128252576445600647255", loc: nl(t)},
 
 		{name: "power", expr: "2 ^ 3", result: "8", loc: nl(t)},
 		{name: "power", expr: "2.1 ^ 3", result: "9.261", loc: nl(t)},
@@ -91,7 +91,7 @@ func TestExecutor_Execute(t *testing.T) {
 		{name: "parents", expr: "(1 + (2 - (3 + 5)) - (4 - 2))", result: "-7", loc: nl(t)},
 		{name: "parents", expr: "(1 + (- 2 (3 + 5)) - (4 - 2))", result: "", loc: l(t, 10, 11)},
 
-		{name: "root_bug", expr: "3 @ 2 -", result: "0.5773502691896258", loc: nl(t)},
+		{name: "root_bug", expr: "3 @ 2 -", result: "0.57735026918962576450915", loc: nl(t)},
 
 		// {name: "", expr: "", result: "", loc: nl(t)},
 	}
