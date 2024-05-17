@@ -6,8 +6,12 @@ type Stack[T any] struct {
 	values []T
 }
 
-func (s *Stack[T]) Push(a T) {
-	s.values = append(s.values, a)
+func NewStack[T any]() *Stack[T] {
+	return &Stack[T]{}
+}
+
+func (s *Stack[T]) Push(a ...T) {
+	s.values = append(s.values, a...)
 }
 
 func (s *Stack[T]) Pop() T {
@@ -26,6 +30,10 @@ func (s *Stack[T]) Empty() bool {
 
 func (s *Stack[T]) Size() int {
 	return len(s.values)
+}
+
+func (s *Stack[T]) Slice() []T {
+	return s.values
 }
 
 func (s *Stack[T]) String() string {

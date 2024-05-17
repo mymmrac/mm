@@ -10,12 +10,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mymmrac/mm/debugger"
-	"github.com/mymmrac/mm/executor"
+	"github.com/mymmrac/mm/executor/v2"
 	"github.com/mymmrac/mm/repl"
 	"github.com/mymmrac/mm/utils"
 )
 
-const verboseFlag = "verbose"
+const (
+	verboseFlag   = "verbose"
+	precisionFlag = "precision"
+)
 
 func main() {
 	rootCmd := &cobra.Command{
@@ -28,6 +31,9 @@ func main() {
 			verbose, err := cmd.PersistentFlags().GetBool(verboseFlag)
 			utils.Assert(err == nil, verboseFlag, "flag not found")
 
+			precision, err := cmd.PersistentFlags().GetInt32(precisionFlag)
+			utils.Assert(err == nil, precisionFlag, "flag not found")
+
 			debug := &debugger.Debugger{}
 			debug.SetEnabled(verbose)
 
@@ -37,16 +43,17 @@ func main() {
 			if isPiped {
 				expr, readErr := io.ReadAll(os.Stdin)
 				utils.Assert(readErr == nil, "reading from stdin:", readErr)
-				runImmediate(string(expr), debug)
+				runImmediate(string(expr), precision, debug)
 			} else if len(args) != 0 {
-				runImmediate(strings.Join(args, " "), debug)
+				runImmediate(strings.Join(args, " "), precision, debug)
 			} else {
-				runRepl(debug)
+				runRepl(precision, debug)
 			}
 		},
 	}
 
 	_ = rootCmd.PersistentFlags().BoolP(verboseFlag, "v", false, "Verbose output")
+	_ = rootCmd.PersistentFlags().Int32P(precisionFlag, "p", 16, "Precision")
 
 	utils.WalkCmd(rootCmd, utils.UpdateHelpFlag)
 	if err := rootCmd.Execute(); err != nil {
@@ -55,10 +62,10 @@ func main() {
 	}
 }
 
-func runImmediate(expr string, debugger *debugger.Debugger) {
+func runImmediate(expr string, precision int32, debugger *debugger.Debugger) {
 	exec := executor.NewExecutor(debugger)
 
-	result, err := exec.Execute(expr)
+	result, err := exec.Execute(expr, precision)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
@@ -71,11 +78,10 @@ func runImmediate(expr string, debugger *debugger.Debugger) {
 	fmt.Println(result)
 }
 
-func runRepl(debugger *debugger.Debugger) {
-	if _, err := tea.NewProgram(repl.NewModel(debugger)).Run(); err != nil {
+func runRepl(precision int32, debugger *debugger.Debugger) {
+	if _, err := tea.NewProgram(repl.NewModel(debugger, precision)).Run(); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "FATAL: %s\n", err)
 		os.Exit(1)
 	}
-
 	fmt.Println("Bye!")
 }

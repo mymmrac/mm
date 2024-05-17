@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/mymmrac/mm/debugger"
-	"github.com/mymmrac/mm/executor"
+	"github.com/mymmrac/mm/executor/v2"
 	"github.com/mymmrac/mm/utils"
 )
 
@@ -32,6 +33,8 @@ type Model struct {
 	results      []string
 
 	executor  *executor.Executor
+	precision int32
+	error     error
 	exprError *executor.ExprError
 
 	debugger *debugger.Debugger
@@ -39,7 +42,7 @@ type Model struct {
 	width, height int
 }
 
-func NewModel(debugger *debugger.Debugger) *Model {
+func NewModel(debugger *debugger.Debugger, precision int32) *Model {
 	input := textinput.New()
 	input.Placeholder = "..."
 	input.Prompt = "> "
@@ -50,6 +53,7 @@ func NewModel(debugger *debugger.Debugger) *Model {
 		expressions:  make([]string, 0),
 		selectedExpr: historyNone,
 		executor:     executor.NewExecutor(debugger),
+		precision:    precision,
 		debugger:     debugger,
 	}
 }
@@ -84,11 +88,17 @@ func (m *Model) Update(rawMsg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-			result, err := m.executor.Execute(expr)
+			result, err := m.executor.Execute(expr, m.precision)
 			if err != nil {
-				m.exprError = err
-				m.input.SetCursor(err.Loc.End)
+				m.error = err
 				m.selectedExpr = historyDisabled
+
+				if errors.As(err, &m.exprError) {
+					m.input.SetCursor(m.exprError.Loc.End)
+				} else {
+					m.exprError = nil
+				}
+
 				break
 			}
 
@@ -162,11 +172,18 @@ func (m *Model) Update(rawMsg tea.Msg) (tea.Model, tea.Cmd) {
 	m.input, inputCmd = m.input.Update(rawMsg)
 
 	if keyUpdate {
-		liveResult, err := m.executor.Execute(m.input.Value())
+		liveResult, err := m.executor.Execute(m.input.Value(), m.precision)
 		if err != nil {
-			m.liveResult = ""
-			m.liveError = true
-			m.liveErrorLoc = err.Loc
+			if errors.As(err, &m.exprError) {
+				m.liveResult = ""
+				m.liveError = true
+				m.liveErrorLoc = m.exprError.Loc
+				m.selectedExpr = historyNone
+			} else {
+				m.error = err
+				m.exprError = nil
+				m.selectedExpr = historyDisabled
+			}
 		} else {
 			m.liveResult = liveResult
 			m.liveError = false
@@ -215,6 +232,8 @@ func (m *Model) View() string {
 
 	if m.exprError != nil {
 		s.WriteString(utils.Wrap("Error: "+m.exprError.Message, m.width))
+	} else if m.error != nil {
+		s.WriteString(utils.Wrap("Error: "+m.error.Error(), m.width))
 	}
 
 	if m.debugger.Enabled() {
