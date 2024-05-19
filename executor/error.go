@@ -7,7 +7,7 @@ type ExprError struct {
 	Loc     Location
 }
 
-func NewExprErr(text string, loc Location) *ExprError {
+func NewExprError(text string, loc Location) *ExprError {
 	return &ExprError{
 		Message: text,
 		Loc:     loc,

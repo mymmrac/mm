@@ -7,23 +7,38 @@ import (
 )
 
 type Token struct {
-	kind   TokenKind
-	text   string
-	loc    Location
-	number decimal.Decimal
-	op     Operator
+	text string
+	loc  Location
+	kind TokenKind
+
+	number     *decimal.Decimal
+	operator   *Operator
+	identifier *Identifier
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("{%s}:[%d-%d] `%s` %s %q", t.kind, t.loc.Start, t.loc.End, t.text, t.number, opToText[t.op])
+	s := fmt.Sprintf("{%s}:[%d-%d] `%s`", t.kind, t.loc.Start, t.loc.End, t.text)
+	if t.number != nil {
+		s += fmt.Sprintf(" %s", t.number.String())
+	}
+	if t.operator != nil {
+		s += fmt.Sprintf(" %s", t.operator.name)
+	}
+	if t.identifier != nil {
+		s += fmt.Sprintf(" %s", t.identifier.name)
+		if !t.identifier.variable {
+			s += fmt.Sprintf("/%d", t.identifier.arity)
+		}
+	}
+	return s
 }
 
 type TokenKind string
 
 const (
-	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
 	KindNumber     TokenKind = "number"     // `123`, `1.12`, `12`, `1_2_3`
-	KindOperator   TokenKind = "operator"   // `+`, `-`, `^`, `(`
+	KindOperator   TokenKind = "operator"   // `+`, `-`, `//`, `(`
+	KindIdentifier TokenKind = "identifier" // `abc`, `a12`, `a_b_1`
 )
 
 type Location struct {
@@ -34,5 +49,3 @@ type Location struct {
 func (l Location) Size() int {
 	return l.End - l.Start
 }
-
-type Vars map[Token]decimal.Decimal

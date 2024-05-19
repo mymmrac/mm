@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mymmrac/mm/debugger"
-	"github.com/mymmrac/mm/executor/v2"
+	"github.com/mymmrac/mm/executor"
 	"github.com/mymmrac/mm/repl"
 	"github.com/mymmrac/mm/utils"
 )

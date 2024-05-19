@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/mymmrac/mm/debugger"
-	"github.com/mymmrac/mm/executor/v2"
+	executor2 "github.com/mymmrac/mm/executor"
 	"github.com/mymmrac/mm/utils"
 )
 
@@ -26,16 +26,16 @@ type Model struct {
 
 	liveResult   string
 	liveError    bool
-	liveErrorLoc executor.Location
+	liveErrorLoc executor2.Location
 
 	selectedExpr int
 	expressions  []string
 	results      []string
 
-	executor  *executor.Executor
+	executor  *executor2.Executor
 	precision int32
 	error     error
-	exprError *executor.ExprError
+	exprError *executor2.ExprError
 
 	debugger *debugger.Debugger
 
@@ -52,7 +52,7 @@ func NewModel(debugger *debugger.Debugger, precision int32) *Model {
 		input:        input,
 		expressions:  make([]string, 0),
 		selectedExpr: historyNone,
-		executor:     executor.NewExecutor(debugger),
+		executor:     executor2.NewExecutor(debugger),
 		precision:    precision,
 		debugger:     debugger,
 	}
