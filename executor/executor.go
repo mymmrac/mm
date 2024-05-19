@@ -154,6 +154,7 @@ func (e *Executor) tokenize(expression string) ([]Token, error) {
 
 func (e *Executor) typeCheck(tokens []Token) error {
 	lValues := 0
+	lastLValue := -1
 	openParents := 0
 	lastOpenParentIndex := -1
 
@@ -166,6 +167,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 			}
 			tokens[i].number = &number
 			lValues++
+			lastLValue = i
 		case KindOperator:
 			switch token.text {
 			case opOpenParenthesis.text:
@@ -177,10 +179,10 @@ func (e *Executor) typeCheck(tokens []Token) error {
 					return NewExprError("unexpected closing parenthesis", token.loc)
 				}
 
-				// TODO: Disallow `()` if it's not a function call with arity 0
-				// if tokens[i-1].kind == KindOperator && tokens[i-1].text == opCloseParenthesis.text {
-				// 	return NewExprError("unexpected closing parenthesis", token.loc)
-				// }
+				if tokens[i-1].kind == KindOperator && tokens[i-1].text == opOpenParenthesis.text && (i == 1 ||
+					(tokens[i-2].kind != KindIdentifier || tokens[i-2].identifier.arity != 0 || tokens[i-2].identifier.variable)) {
+					return NewExprError("unexpected closing parenthesis", token.loc)
+				}
 
 				openParents--
 				tokens[i].operator = &opCloseParenthesis
@@ -218,6 +220,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 					return NewExprError("unknown identifier `"+token.text+"`", token.loc)
 				}
 				lValues++
+				lastLValue = i
 			} else {
 				parenthesis := 0
 				var args uint = 0
@@ -291,6 +294,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 
 				lValues -= int(args)
 				lValues++
+				lastLValue = i
 			}
 
 			tokens[i].identifier = &knownIdentifiers[identIndex]
@@ -316,11 +320,8 @@ func (e *Executor) typeCheck(tokens []Token) error {
 	case lValues == 1:
 		return nil
 	default:
-		// TODO: Be more specific where extra value appeared (for example in "sin(1 2)")
-		return NewExprError("too many values returned in expression", Location{
-			Start: tokens[0].loc.Start,
-			End:   tokens[len(tokens)-1].loc.End,
-		})
+		// FIXME: last L value for functions with arguments is not correct
+		return NewExprError("too many values returned in expression", tokens[lastLValue].loc)
 	}
 }
 
