@@ -23,7 +23,7 @@ mm
 
 > 2 ^ 8 / 3.1
 
-> 1 / (2.5 !ceil) -
+> 1 / ceil(2.5 + 4 / (abs(sin(5))))
 ```
 
 ## :keyboard: Shortcuts
@@ -43,19 +43,34 @@ mm
 - `-` Subtraction
 - `*` Multiplication
 - `/` Division
-- `^` Power (only integer powers)
-- `@` Nth Root (only integer roots)
-- `%` Mod (only integers)
+- `//` Floor division
+- `^` Power
+- `%` Modulo
 
 ### Unary
 
+- `+` Plus
 - `-` Minus
-- `++` Increment
-- `--` Decrement
-- `!abs` Abs
-- `!round` Round
-- `!floor` Floor
-- `!ceil` Ceil
+
+## :hash: Functions
+
+- `sqrt/1` Square root
+- `abs/1` Absolute value
+- `round/1` Round to integer
+- `round/2` Round with precision
+- `roundUp/1` Round up to integer
+- `roundUp/2` Round up with precision
+- `floor/1` Floor
+- `ceil/1` Ceil
+- `sin/1` Sine
+- `cos/1` Cosine
+- `tan/1` Tangent
+- `rad/1` To radians
+- `min/2` Minimum
+- `max/2` Maximum
+- `rand/0` Random value [0, 1)
+
+> Note: `<name>/N` means that `<name>` is called with `N` arguments
 
 ## :book: Constants
 

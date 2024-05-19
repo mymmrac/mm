@@ -100,15 +100,6 @@ var knownOperators = []Operator{
 		}),
 	},
 	{
-		text:       "%",
-		name:       "modulo",
-		precedence: 2,
-		arity:      2,
-		apply: applyBinaryOp(func(v1, v2 decimal.Decimal) (decimal.Decimal, error) {
-			return v1.Mod(v2), nil
-		}),
-	},
-	{
 		text:       "^",
 		name:       "power",
 		precedence: 3,
@@ -123,6 +114,15 @@ var knownOperators = []Operator{
 				return decimal.Zero, fmt.Errorf("imaginary value")
 			}
 			return v1.PowWithPrecision(v2, defaultPrecision)
+		}),
+	},
+	{
+		text:       "%",
+		name:       "modulo",
+		precedence: 2,
+		arity:      2,
+		apply: applyBinaryOp(func(v1, v2 decimal.Decimal) (decimal.Decimal, error) {
+			return v1.Mod(v2), nil
 		}),
 	},
 }
