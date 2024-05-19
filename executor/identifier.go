@@ -181,13 +181,21 @@ var knownIdentifiers = []Identifier{
 var knownUniqueIdentifiers []string
 
 func init() {
-	// TODO: Validate that [text] + [arity] + [variable] is unique (also with operators)
-	// TODO: Validate that [text] doesn't start with digit
-	// TODO: Validate that if [variable] then [arity] == 0
-
 	for _, identifier := range knownIdentifiers {
+		utils.Assert(!utils.IsDigit(identifier.text[0]),
+			fmt.Sprintf("identifier `%s` must not start with a digit", identifier.text),
+		)
+		utils.Assert(identifier.variable && identifier.arity == 0 || !identifier.variable,
+			fmt.Sprintf("identifier `%s` must have arity 0 if it is variable", identifier.text),
+		)
+
+		key := fmt.Sprintf("%s/%d", identifier.text, identifier.arity)
+		utils.Assert(!uniqueness[key], fmt.Sprintf("identifier `%s` already exists", key))
+		uniqueness[key] = true
+
 		knownUniqueIdentifiers = append(knownUniqueIdentifiers, identifier.text)
 	}
+
 	slices.SortFunc(knownUniqueIdentifiers, func(a, b string) int {
 		return len(b) - len(a)
 	})

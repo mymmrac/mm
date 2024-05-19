@@ -129,13 +129,26 @@ var knownOperators = []Operator{
 
 var knownUniqueOperators []string
 
-func init() {
-	// TODO: Validate that [text] + [arity] is unique
-	// TODO: Validate that [arity] is 1 or 2 if not `(`, `)`, `,`
+var uniqueness = make(map[string]bool)
 
+func init() {
 	for _, operator := range knownOperators {
+		if operator.text == opOpenParenthesis.text || operator.text == opCloseParenthesis.text ||
+			operator.text == opComma.text {
+			utils.Assert(operator.arity == 0, fmt.Sprintf("operator `%s` arity must be 0", operator.text))
+		} else {
+			utils.Assert(operator.arity == 1 || operator.arity == 2,
+				fmt.Sprintf("operator `%s` arity must be 1 or 2", operator.text),
+			)
+		}
+
+		key := fmt.Sprintf("%s/%d", operator.text, operator.arity)
+		utils.Assert(!uniqueness[key], fmt.Sprintf("operator `%s` already exists", key))
+		uniqueness[key] = true
+
 		knownUniqueOperators = append(knownUniqueOperators, operator.text)
 	}
+
 	slices.SortFunc(knownUniqueOperators, func(a, b string) int {
 		return len(b) - len(a)
 	})
