@@ -16,6 +16,23 @@ type Token struct {
 	identifier *Identifier
 }
 
+func (t Token) isControlFlow() bool {
+	return t.kind == KindOperator &&
+		(t.text == opOpenParenthesis.text || t.text == opCloseParenthesis.text || t.text == opComma.text)
+}
+
+func (t Token) isOpenParenthesis() bool {
+	return t.kind == KindOperator && t.text == opOpenParenthesis.text
+}
+
+func (t Token) isCloseParenthesis() bool {
+	return t.kind == KindOperator && t.text == opCloseParenthesis.text
+}
+
+func (t Token) isComma() bool {
+	return t.kind == KindOperator && t.text == opComma.text
+}
+
 func (t Token) String() string {
 	s := fmt.Sprintf("{%s}:[%d-%d] `%s`", t.kind, t.loc.Start, t.loc.End, t.text)
 	if t.number != nil {

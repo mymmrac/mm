@@ -179,8 +179,8 @@ func (e *Executor) typeCheck(tokens []Token) error {
 					return NewExprError("unexpected closing parenthesis", token.loc)
 				}
 
-				if tokens[i-1].kind == KindOperator && tokens[i-1].text == opOpenParenthesis.text && (i == 1 ||
-					(tokens[i-2].kind != KindIdentifier || tokens[i-2].identifier.arity != 0 || tokens[i-2].identifier.variable)) {
+				if tokens[i-1].isOpenParenthesis() && (i == 1 || (tokens[i-2].kind != KindIdentifier ||
+					tokens[i-2].identifier.arity != 0 || tokens[i-2].identifier.variable)) {
 					return NewExprError("unexpected closing parenthesis", token.loc)
 				}
 
@@ -190,6 +190,13 @@ func (e *Executor) typeCheck(tokens []Token) error {
 				// TODO: Check tha only used inside functions
 				tokens[i].operator = &opComma
 			default:
+				if i > 0 {
+					pt := tokens[i-1]
+					if pt.kind == KindOperator && !pt.isControlFlow() {
+						return NewExprError("unexpected operator `"+token.text+"`", token.loc)
+					}
+				}
+
 				opIndex := -1
 
 				if i == 0 || (tokens[i-1].kind == KindOperator && tokens[i-1].text != opCloseParenthesis.text) {
@@ -212,7 +219,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 		case KindIdentifier:
 			identIndex := -1
 
-			if i == len(tokens)-1 || !(tokens[i+1].kind == KindOperator && tokens[i+1].text == opOpenParenthesis.text) {
+			if i == len(tokens)-1 || !(tokens[i+1].isOpenParenthesis()) {
 				identIndex = slices.IndexFunc(knownIdentifiers, func(ident Identifier) bool {
 					return ident.variable && ident.text == token.text
 				})
@@ -229,7 +236,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 				for k, t := range tokens[i+1:] {
 					// Check first open parenthesis
 					if k == 0 {
-						if t.kind != KindOperator || t.text != opOpenParenthesis.text {
+						if !t.isOpenParenthesis() {
 							return NewExprError(
 								"expected `"+opOpenParenthesis.text+"`, but got `"+t.text+"`",
 								t.loc,
@@ -240,7 +247,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 					}
 
 					// Add open parenthesis
-					if t.kind == KindOperator && t.text == opOpenParenthesis.text {
+					if t.isOpenParenthesis() {
 						if !capturingArg {
 							args++
 							capturingArg = true
@@ -250,7 +257,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 						continue
 					}
 					// Remove open parenthesis
-					if t.kind == KindOperator && t.text == opCloseParenthesis.text {
+					if t.isCloseParenthesis() {
 						parenthesis--
 						if parenthesis == 0 {
 							break
@@ -264,7 +271,7 @@ func (e *Executor) typeCheck(tokens []Token) error {
 					}
 
 					// Check comma
-					if t.kind == KindOperator && t.text == opComma.text {
+					if t.isComma() {
 						unusedComma = &t
 						capturingArg = false
 						continue
@@ -339,14 +346,14 @@ func (e *Executor) convertToPostfixNotation(tokens []Token) ([]Token, error) {
 			case opOpenParenthesis.text:
 				stack.Push(token)
 			case opCloseParenthesis.text:
-				for !stack.Empty() && stack.Top().text != opOpenParenthesis.text {
+				for !stack.Empty() && !stack.Top().isOpenParenthesis() {
 					output.Push(stack.Pop())
 				}
 				_ = stack.Pop()
 			case opComma.text:
 				return nil, NewExprError("unexpected `"+opComma.text+"`", token.loc)
 			default:
-				for !stack.Empty() && !(stack.Top().kind == KindOperator && stack.Top().text == opOpenParenthesis.text) &&
+				for !stack.Empty() && !stack.Top().isOpenParenthesis() &&
 					token.operator.precedence <= stack.Top().operator.precedence {
 					output.Push(stack.Pop())
 				}
@@ -362,7 +369,7 @@ func (e *Executor) convertToPostfixNotation(tokens []Token) ([]Token, error) {
 
 					t := tokens[i]
 					if j != token.identifier.arity-1 {
-						for !(t.kind == KindOperator && t.text == opComma.text) {
+						for !t.isComma() {
 							i++
 							t = tokens[i]
 						}
@@ -370,9 +377,9 @@ func (e *Executor) convertToPostfixNotation(tokens []Token) ([]Token, error) {
 						p := 0
 						for {
 							switch {
-							case t.kind == KindOperator && t.text == opOpenParenthesis.text:
+							case t.isOpenParenthesis():
 								p++
-							case t.kind == KindOperator && t.text == opCloseParenthesis.text:
+							case t.isCloseParenthesis():
 								p--
 							}
 							if p == -1 {
