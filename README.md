@@ -65,6 +65,7 @@ mm
 - `sin/1` Sine
 - `cos/1` Cosine
 - `tan/1` Tangent
+- `atan/1` Arc tangent
 - `rad/1` To radians
 - `min/2` Minimum
 - `max/2` Maximum

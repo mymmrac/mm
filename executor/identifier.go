@@ -136,6 +136,14 @@ var knownIdentifiers = []Identifier{
 		}),
 	},
 	{
+		text:  "atan",
+		name:  "arc tangent",
+		arity: 1,
+		apply: applyUnaryOp(func(v1 decimal.Decimal) (decimal.Decimal, error) {
+			return v1.Atan(), nil
+		}),
+	},
+	{
 		text:  "rad",
 		name:  "radian",
 		arity: 1,
